@@ -15,7 +15,7 @@ export const List_products = [
       category: 'Sembako',
       price: 'Rp 25.000',
       stock: '150',
-      unit: 'Per 1 kg',
+      unit: 'Per 100gr',
     },
     {
       id: 3,
