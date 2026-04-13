@@ -20,9 +20,9 @@ export default function Login({ onLogin }) {
       <div className="bg-[#f3f4f6]/80 backdrop-blur-xl border border-white/10 rounded-[20px] p-12 w-[420px] shadow-2xl relative z-10 animate-fadeInUp">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-white">
-            {/* Pastikan gambar Kopdes.png ada di folder src/assets/Gambar/ */}
+            {/*gambar Kopdes.png*/}
             <img
-              src="/src/assets/Gambar/Kopdes.png"
+              src="/src/assets/Kopdes.png"
               alt="kopdes"
               className="w-full h-full object-contain"
             />
