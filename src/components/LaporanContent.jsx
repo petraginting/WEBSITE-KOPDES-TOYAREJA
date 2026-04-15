@@ -58,16 +58,7 @@ export default function LaporanContent() {
   return (
     <div className="animate-fadeInUp print:p-0">
       {/* Header Halaman */}
-      <div className="flex items-center justify-between mb-6 print:hidden">
-        <div>
-          <h2 className="text-[22px] font-extrabold text-dark">
-            📋 Laporan Koperasi
-          </h2>
-          <p className="text-[13px] text-light mt-0.5">
-            Manajemen Laporan Periode Aktif
-          </p>
-        </div>
-
+      <div className="flex items-center justify-end mb-6 print:hidden">
         <div className="flex gap-2.5">
           <select
             value={selectedMonth}

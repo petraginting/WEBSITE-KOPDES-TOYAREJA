@@ -8,6 +8,7 @@ import PesananContent from "../components/PesananContent";
 import NotifikasiContent from "../components/NotifikasiContent";
 import LaporanContent from "../components/LaporanContent";
 import ProfilContent from "../components/ProfilContent";
+import PrediksiStockContent from "../components/PrediksiStockContent";
 
 const titles = {
   dashboard: ["Dashboard", "Ringkasan aktivitas koperasi hari ini"],
@@ -16,6 +17,7 @@ const titles = {
   produk: ["Produk Koperasi", "Kelola katalog produk yang dijual"],
   pesanan: ["Manajemen Pesanan", "Pantau dan proses pesanan masuk"],
   notifikasi: ["Notifikasi & Promosi", "Kirim informasi kepada anggota"],
+  prediksi: ["Prediksi Stock", "Memprediksi kapan stock habis"],
   laporan: ["Laporan Koperasi", "Laporan transaksi dan keuangan"],
   profil: ["Profil Koperasi", "Informasi dan pengaturan koperasi"],
 };
@@ -34,7 +36,7 @@ export default function MainDashboard({ onLogout }) {
 
       <div className="ml-[260px] flex-1 min-h-screen bg-cream">
         {/* Topbar */}
-        <div className="bg-white border-b border-border px-8 h-16 flex items-center justify-between sticky top-0 z-10">
+        <div className="bg-white border-b border-border px-8 h-16 flex items-center justify-between fixed top-0 right-0 left-[260px] z-10">
           <div>
             <h1 className="text-lg font-bold text-dark">{title}</h1>
             <p className="text-xs text-light">{subtitle}</p>
@@ -51,13 +53,14 @@ export default function MainDashboard({ onLogout }) {
         </div>
 
         {/* Content Area */}
-        <div className="p-7">
+        <div className="p-7 mt-16">
           {activeSection === "dashboard" && <DashboardContent />}
           {activeSection === "anggota" && <AnggotaContent />}
           {activeSection === "simpanan" && <SimpananContent />}
           {activeSection === "produk" && <ProdukContent />}
           {activeSection === "pesanan" && <PesananContent />}
           {activeSection === "notifikasi" && <NotifikasiContent />}
+          {activeSection === "prediksi" && <PrediksiStockContent />}
           {activeSection === "laporan" && <LaporanContent />}
           {activeSection === "profil" && <ProfilContent />}
         </div>

@@ -127,15 +127,7 @@ export default function AnggotaContent() {
   return (
     <div className="animate-fadeInUp">
       {/* ── HEADER ── */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-[22px] font-extrabold text-dark">
-            👥 Manajemen Data Anggota
-          </h2>
-          <p className="text-[13px] text-light mt-[2px]">
-            Mengelola data anggota koperasi Anda
-          </p>
-        </div>
+      <div className="flex items-center justify-end mb-6">
         <button
           onClick={openAddModal}
           className="bg-gradient-to-br from-blue-700 to-blue-500 text-white px-[18px] py-[9px] rounded-[12px] text-[13px] font-semibold hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(37,99,235,0.35)] transition-all flex items-center gap-[6px]"

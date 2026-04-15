@@ -91,15 +91,7 @@ export default function NotifikasiContent() {
 
   return (
     <div className="animate-fadeInUp">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-[22px] font-extrabold text-dark">
-            🔔 Notifikasi & Promosi
-          </h2>
-          <p className="text-[13px] text-light mt-0.5">
-            Kelola komunikasi dan target promo anggota
-          </p>
-        </div>
+      <div className="flex items-center justify-end mb-6">
         <button
           onClick={openModalTambah}
           className="bg-gradient-to-br from-blue-700 to-blue-500 text-white px-5 py-2.5 rounded-xl text-[13px] font-bold hover:shadow-lg transition-all"

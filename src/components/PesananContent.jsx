@@ -45,17 +45,6 @@ export default function PesananContent() {
 
   return (
     <div className="animate-fadeInUp">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-[22px] font-extrabold text-dark">
-            📦 Manajemen Pesanan
-          </h2>
-          <p className="text-[13px] text-light mt-0.5">
-            Pantau dan kelola status pesanan anggota
-          </p>
-        </div>
-      </div>
-
       {/* Stats Grid - Sekarang Dinamis */}
       <div className="grid grid-cols-4 gap-4 mb-7">
         <StatCardPesanan

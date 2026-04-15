@@ -142,15 +142,7 @@ export default function SimpananContent() {
   return (
     <div className="animate-fadeInUp">
       {/* ── HEADER ── */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-[22px] font-extrabold text-dark">
-            💰 Manajemen Simpanan Anggota
-          </h2>
-          <p className="text-[13px] text-light mt-0.5">
-            Mengelola simpanan pokok, wajib, dan sukarela anggota
-          </p>
-        </div>
+      <div className="flex items-center justify-end mb-6">
         <button
           onClick={openAddModal}
           className="bg-gradient-to-br from-blue-700 to-blue-500 text-white px-4 py-2 rounded-xl text-[13px] font-semibold hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(37,99,235,0.35)] transition-all"

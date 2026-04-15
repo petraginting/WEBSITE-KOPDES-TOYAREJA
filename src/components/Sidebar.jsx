@@ -16,7 +16,13 @@ export default function Sidebar({ activeSection, setActiveSection, onLogout }) {
       icon: "🔔",
       section: "Komunikasi",
     },
-    { id: "laporan", label: "Laporan", icon: "📋", section: "Lainnya" },
+    {
+      id: "prediksi",
+      label: "Prediksi Stok AI",
+      icon: "✨",
+      section: "Lainnya",
+    },
+    { id: "laporan", label: "Laporan", icon: "📋" },
     { id: "profil", label: "Profil Koperasi", icon: "🏢" },
   ];
 

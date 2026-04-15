@@ -43,47 +43,40 @@ export default function ProfilContent() {
 
   return (
     <div className="animate-fadeInUp">
-      {/* Header Halaman */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-[22px] font-extrabold text-dark">
-            🏢 Profil & Informasi Koperasi
-          </h2>
-          <p className="text-[13px] text-light mt-0.5">
-            Mengelola informasi yang ditampilkan di website
-          </p>
-        </div>
-        <button
-          onClick={handleBukaModal}
-          className="bg-gradient-to-br from-blue-700 to-blue-500 text-white px-4 py-2 rounded-xl text-[13px] font-semibold hover:-translate-y-[1px] shadow-sm transition-all"
-        >
-          ✏️ Edit Profil
-        </button>
-      </div>
-
       {/* Profil Hero */}
-      <div className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-2xl p-8 text-white mb-5 flex items-center gap-6 shadow-md">
-        <div className="w-[100px] h-[100px] bg-white rounded-2xl flex items-center justify-center text-[40px] flex-shrink-0">
-          {/* Gambar Profil */}
-          <img
-            src="/src/assets/Kopdes.png"
-            alt=""
-            className="w-full h-full object-contain"
-          />
-        </div>
-        <div>
-          <h2 className="font-serif text-[26px] mb-1 font-bold">
-            {profileData.nama}
-          </h2>
-          <p className="text-white/70 text-sm">{profileData.slogan}</p>
-          <div className="flex items-center gap-2.5 mt-3">
-            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[11px] font-bold before:content-['●'] before:mr-1 before:text-[8px]">
-              {profileData.status}
-            </span>
-            <span className="text-xs text-white/70">
-              Berdiri sejak {profileData.tanggalBerdiri}
-            </span>
+      <div className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-2xl p-8 text-white mb-5 flex gap-6 shadow-md justify-between">
+        <div className="flex items-center gap-6">
+          <div className="w-[100px] h-[100px] bg-white rounded-2xl flex items-center justify-center text-[40px] flex-shrink-0">
+            {/* Gambar Profil */}
+            <img
+              src="/src/assets/Kopdes.png"
+              alt=""
+              className="w-full h-full object-contain"
+            />
           </div>
+          <div>
+            <h2 className="font-serif text-[26px] mb-1 font-bold">
+              {profileData.nama}
+            </h2>
+            <p className="text-white/70 text-sm">{profileData.slogan}</p>
+            <div className="flex items-center gap-2.5 mt-3">
+              <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[11px] font-bold before:content-['●'] before:mr-1 before:text-[8px]">
+                {profileData.status}
+              </span>
+              <span className="text-xs text-white/70">
+                Berdiri sejak {profileData.tanggalBerdiri}
+              </span>
+            </div>
+          </div>
+        </div>
+        {/* tombol edit */}
+        <div className="flex items-start justify-end mb-6">
+          <button
+            onClick={handleBukaModal}
+            className="bg-gradient-to-br from-blue-700 to-blue-500 text-white px-4 py-2 rounded-xl text-[13px] font-semibold hover:-translate-y-[1px] shadow-sm transition-all"
+          >
+            ✏️ Edit Profil
+          </button>
         </div>
       </div>
 
