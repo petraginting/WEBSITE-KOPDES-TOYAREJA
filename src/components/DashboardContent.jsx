@@ -1,40 +1,136 @@
-export default function DashboardContent() {
+import { useState } from "react";
+
+export default function DashboardContent({ setActiveSection }) {
+  // --- 1. STATE UNTUK DATA
+
+  // Data Statistik Atas
+  const [statsData] = useState({
+    anggota: { value: "248", change: "↑ +12 anggota bulan ini" },
+    produk: { value: "64", change: "↑ +5 produk baru" },
+    pesanan: { value: "127", change: "↑ +28 pesanan bulan ini" },
+    simpanan: { value: "Rp 482 jt", change: "↑ +Rp 18 jt" },
+  });
+
+  // Data Grafik Penjualan
+  const [chartData] = useState([
+    { val: "42jt", height: "70px", label: "Jan", opacity: "1" },
+    { val: "38jt", height: "60px", label: "Feb", opacity: "0.8" },
+    { val: "56jt", height: "90px", label: "Mar", opacity: "1" },
+    { val: "48jt", height: "76px", label: "Apr", opacity: "0.8" },
+    { val: "65jt", height: "100px", label: "Mei", opacity: "1" },
+    { val: "53jt", height: "84px", label: "Jun", opacity: "0.8" },
+  ]);
+
+  // Data Aktivitas Terbaru
+  const [activities] = useState([
+    {
+      id: 1,
+      title: "Pesanan #ORD-127 masuk",
+      desc: "Budi Santoso — Beras Organik 5kg x2",
+      time: "10 menit lalu",
+    },
+    {
+      id: 2,
+      title: "Anggota baru terdaftar",
+      desc: "Siti Rahayu — No. Anggota #A248",
+      time: "1 jam lalu",
+    },
+    {
+      id: 3,
+      title: "Simpanan dicatat",
+      desc: "Ahmad Fauzi — Simpanan Wajib Rp 50.000",
+      time: "2 jam lalu",
+    },
+    {
+      id: 4,
+      title: "Produk stok diperbarui",
+      desc: "Minyak Goreng 1L — stok menjadi 120 unit",
+      time: "3 jam lalu",
+    },
+    {
+      id: 5,
+      title: "Pesanan #ORD-126 selesai",
+      desc: "Dewi Lestari — status diperbarui: Selesai",
+      time: "5 jam lalu",
+    },
+  ]);
+
+  // Data Tabel Pesanan
+  const [recentOrders] = useState([
+    {
+      id: "ORD-127",
+      name: "Budi Santoso",
+      product: "Beras Organik 5kg",
+      total: "Rp 130.000",
+      date: "07/03/2026",
+      status: "Diproses",
+      statusColor: "bg-[#fef3cd] text-[#854d0e]",
+    },
+    {
+      id: "ORD-126",
+      name: "Dewi Lestari",
+      product: "Minyak Goreng 1L",
+      total: "Rp 45.000",
+      date: "06/03/2026",
+      status: "Selesai",
+      statusColor: "bg-blue-100 text-blue-700",
+    },
+    {
+      id: "ORD-125",
+      name: "Hendra Wijaya",
+      product: "Gula Pasir 1kg",
+      total: "Rp 18.000",
+      date: "06/03/2026",
+      status: "Selesai",
+      statusColor: "bg-blue-100 text-blue-700",
+    },
+    {
+      id: "ORD-124",
+      name: "Rina Marlina",
+      product: "Tepung Terigu 1kg",
+      total: "Rp 14.000",
+      date: "05/03/2026",
+      status: "Dibatalkan",
+      statusColor: "bg-[#fee2e2] text-[#991b1b]",
+    },
+  ]);
+
   return (
     <div className="animate-fadeInUp">
-      {/* ── STATS GRID ── */}
+      {/*  STATS GRID  */}
       <div className="grid grid-cols-4 gap-4 mb-7">
         <StatCard
           icon="👥"
-          value="248"
+          value={statsData.anggota.value}
           label="Total Anggota Aktif"
-          change="↑ +12 anggota bulan ini"
+          change={statsData.anggota.change}
           colorClass="from-blue-600 to-blue-400"
         />
         <StatCard
           icon="🛒"
-          value="64"
+          value={statsData.produk.value}
           label="Produk Tersedia"
-          change="↑ +5 produk baru"
+          change={statsData.produk.change}
           colorClass="from-gold to-gold-light"
         />
         <StatCard
           icon="📦"
-          value="127"
+          value={statsData.pesanan.value}
           label="Total Pesanan Masuk"
-          change="↑ +28 pesanan bulan ini"
+          change={statsData.pesanan.change}
           colorClass="from-blue-500 to-blue-400"
         />
         <StatCard
           icon="💰"
-          value="Rp 482 jt"
+          value={statsData.simpanan.value}
           label="Total Simpanan Anggota"
-          change="↑ +Rp 18 jt"
+          change={statsData.simpanan.change}
           colorClass="from-purple-500 to-purple-400"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-5 mb-5">
-        {/* ── GRAFIK PENJUALAN ── */}
+        {/*  GRAFIK PENJUALAN  */}
         <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
           <div className="p-5 border-b border-border flex justify-between items-center">
             <h3 className="text-[15px] font-bold text-dark">
@@ -47,17 +143,20 @@ export default function DashboardContent() {
           </div>
           <div className="p-6">
             <div className="flex items-end gap-2.5 h-[120px] pt-2.5">
-              <BarItem val="42jt" height="70px" label="Jan" />
-              <BarItem val="38jt" height="60px" label="Feb" opacity="0.8" />
-              <BarItem val="56jt" height="90px" label="Mar" />
-              <BarItem val="48jt" height="76px" label="Apr" opacity="0.8" />
-              <BarItem val="65jt" height="100px" label="Mei" />
-              <BarItem val="53jt" height="84px" label="Jun" opacity="0.8" />
+              {chartData.map((item, index) => (
+                <BarItem
+                  key={index}
+                  val={item.val}
+                  height={item.height}
+                  label={item.label}
+                  opacity={item.opacity}
+                />
+              ))}
             </div>
           </div>
         </div>
 
-        {/* ── AKTIVITAS TERBARU ── */}
+        {/*  AKTIVITAS TERBARU  */}
         <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
           <div className="p-5 border-b border-border flex justify-between items-center">
             <h3 className="text-[15px] font-bold text-dark">
@@ -67,43 +166,30 @@ export default function DashboardContent() {
           </div>
           <div className="p-6">
             <div className="relative pl-6 before:content-[''] before:absolute before:left-[7px] before:top-0 before:bottom-0 before:w-[2px] before:bg-blue-100">
-              <TimelineItem
-                title="Pesanan #ORD-127 masuk"
-                desc="Budi Santoso — Beras Organik 5kg x2"
-                time="10 menit lalu"
-              />
-              <TimelineItem
-                title="Anggota baru terdaftar"
-                desc="Siti Rahayu — No. Anggota #A248"
-                time="1 jam lalu"
-              />
-              <TimelineItem
-                title="Simpanan dicatat"
-                desc="Ahmad Fauzi — Simpanan Wajib Rp 50.000"
-                time="2 jam lalu"
-              />
-              <TimelineItem
-                title="Produk stok diperbarui"
-                desc="Minyak Goreng 1L — stok menjadi 120 unit"
-                time="3 jam lalu"
-              />
-              <TimelineItem
-                title="Pesanan #ORD-126 selesai"
-                desc="Dewi Lestari — status diperbarui: Selesai"
-                time="5 jam lalu"
-              />
+              {activities.map((act) => (
+                <TimelineItem
+                  key={act.id}
+                  title={act.title}
+                  desc={act.desc}
+                  time={act.time}
+                />
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── TABEL PESANAN TERBARU ── */}
+      {/*  TABEL PESANAN TERBARU */}
       <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
         <div className="p-5 border-b border-border flex items-center justify-between">
           <h3 className="text-[15px] font-bold text-dark">
             📦 Pesanan Terbaru
           </h3>
-          <button className="bg-blue-50 text-blue-700 border border-border px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-all">
+          {/* Tombol ke tab pesanan */}
+          <button
+            onClick={() => setActiveSection("pesanan")}
+            className="bg-blue-50 text-blue-700 border border-border px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-all"
+          >
             Lihat Semua →
           </button>
         </div>
@@ -132,54 +218,25 @@ export default function DashboardContent() {
               </tr>
             </thead>
             <tbody>
-              <tr className="hover:bg-blue-50 border-b border-blue-50">
-                <td className="px-4 py-3 text-dark font-bold">#ORD-127</td>
-                <td className="px-4 py-3 text-dark">Budi Santoso</td>
-                <td className="px-4 py-3 text-dark">Beras Organik 5kg</td>
-                <td className="px-4 py-3 text-dark">Rp 130.000</td>
-                <td className="px-4 py-3 text-dark">07/03/2026</td>
-                <td className="px-4 py-3">
-                  <span className="bg-[#fef3cd] text-[#854d0e] px-2.5 py-0.5 rounded-full text-[11px] font-semibold before:content-['●'] before:mr-1 before:text-[8px]">
-                    Diproses
-                  </span>
-                </td>
-              </tr>
-              <tr className="hover:bg-blue-50 border-b border-blue-50">
-                <td className="px-4 py-3 text-dark font-bold">#ORD-126</td>
-                <td className="px-4 py-3 text-dark">Dewi Lestari</td>
-                <td className="px-4 py-3 text-dark">Minyak Goreng 1L</td>
-                <td className="px-4 py-3 text-dark">Rp 45.000</td>
-                <td className="px-4 py-3 text-dark">06/03/2026</td>
-                <td className="px-4 py-3">
-                  <span className="bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full text-[11px] font-semibold before:content-['●'] before:mr-1 before:text-[8px]">
-                    Selesai
-                  </span>
-                </td>
-              </tr>
-              <tr className="hover:bg-blue-50 border-b border-blue-50">
-                <td className="px-4 py-3 text-dark font-bold">#ORD-125</td>
-                <td className="px-4 py-3 text-dark">Hendra Wijaya</td>
-                <td className="px-4 py-3 text-dark">Gula Pasir 1kg</td>
-                <td className="px-4 py-3 text-dark">Rp 18.000</td>
-                <td className="px-4 py-3 text-dark">06/03/2026</td>
-                <td className="px-4 py-3">
-                  <span className="bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full text-[11px] font-semibold before:content-['●'] before:mr-1 before:text-[8px]">
-                    Selesai
-                  </span>
-                </td>
-              </tr>
-              <tr className="hover:bg-blue-50 border-b border-blue-50">
-                <td className="px-4 py-3 text-dark font-bold">#ORD-124</td>
-                <td className="px-4 py-3 text-dark">Rina Marlina</td>
-                <td className="px-4 py-3 text-dark">Tepung Terigu 1kg</td>
-                <td className="px-4 py-3 text-dark">Rp 14.000</td>
-                <td className="px-4 py-3 text-dark">05/03/2026</td>
-                <td className="px-4 py-3">
-                  <span className="bg-[#fee2e2] text-[#991b1b] px-2.5 py-0.5 rounded-full text-[11px] font-semibold before:content-['●'] before:mr-1 before:text-[8px]">
-                    Dibatalkan
-                  </span>
-                </td>
-              </tr>
+              {recentOrders.map((order) => (
+                <tr
+                  key={order.id}
+                  className="hover:bg-blue-50 border-b border-blue-50"
+                >
+                  <td className="px-4 py-3 text-dark font-bold">#{order.id}</td>
+                  <td className="px-4 py-3 text-dark">{order.name}</td>
+                  <td className="px-4 py-3 text-dark">{order.product}</td>
+                  <td className="px-4 py-3 text-dark">{order.total}</td>
+                  <td className="px-4 py-3 text-dark">{order.date}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`${order.statusColor} px-2.5 py-0.5 rounded-full text-[11px] font-semibold before:content-['●'] before:mr-1 before:text-[8px]`}
+                    >
+                      {order.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -188,7 +245,7 @@ export default function DashboardContent() {
   );
 }
 
-// ─── SUB-KOMPONEN BANTUAN  ───
+//  SUB-KOMPONEN BANTUAN
 
 function StatCard({ icon, value, label, change, colorClass }) {
   return (

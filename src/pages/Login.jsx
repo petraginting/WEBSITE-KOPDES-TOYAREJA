@@ -1,14 +1,18 @@
 import { useState } from "react";
 
 export default function Login({ onLogin }) {
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
+  // mengubah parameter agar menerima event 'e' dari form submit
+  const handleLogin = (e) => {
+    e.preventDefault(); // agar halaman tidak refresh saat tombol diklik/dienter
+
+    // Logika dummy sementara:
     if (username === "admin" && password === "admin123") {
       onLogin();
     } else {
-      alert("Username atau password salah!\nGunakan: admin / admin123");
+      alert("Username atau password salah!");
     }
   };
 
@@ -42,37 +46,42 @@ export default function Login({ onLogin }) {
           Masuk ke panel administrasi koperasi desa
         </p>
 
-        <div className="mb-5">
-          <label className="block text-black text-[13px] font-medium mb-2 tracking-wide">
-            Username
-          </label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full bg-white/10 border border-black/40 rounded-xl px-4 py-3 text-black text-sm outline-none focus:border-blue-400 focus:bg-white/20 focus:ring-3 focus:ring-blue-400/20 transition-all"
-          />
-        </div>
+        {/* TAG FORM */}
+        <form onSubmit={handleLogin}>
+          <div className="mb-5">
+            <label className="block text-black text-[13px] font-medium mb-2 tracking-wide">
+              Username
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required // required agar browser mencegat jika form kosong
+              className="w-full bg-white/10 border border-black/40 rounded-xl px-4 py-3 text-black text-sm outline-none focus:border-blue-400 focus:bg-white/20 focus:ring-3 focus:ring-blue-400/20 transition-all"
+            />
+          </div>
 
-        <div className="mb-5">
-          <label className="block text-black text-[13px] font-medium mb-2 tracking-wide">
-            Password
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-            className="w-full bg-white/10 border border-black/40 rounded-xl px-4 py-3 text-black text-sm outline-none focus:border-blue-400 focus:bg-white/20 focus:ring-3 focus:ring-blue-400/20 transition-all"
-          />
-        </div>
+          <div className="mb-5">
+            <label className="block text-black text-[13px] font-medium mb-2 tracking-wide">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required // Tambahkan required
+              className="w-full bg-white/10 border border-black/40 rounded-xl px-4 py-3 text-black text-sm outline-none focus:border-blue-400 focus:bg-white/20 focus:ring-3 focus:ring-blue-400/20 transition-all"
+            />
+          </div>
 
-        <button
-          onClick={handleLogin}
-          className="w-full bg-gradient-to-br from-blue-700 to-blue-500 text-white rounded-xl p-3.5 text-[15px] font-semibold hover:-translate-y-[1px] hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)] transition-all mt-2"
-        >
-          Masuk ke Dashboard
-        </button>
+          {/* Submit form*/}
+          <button
+            type="submit"
+            className="w-full bg-gradient-to-br from-blue-700 to-blue-500 text-white rounded-xl p-3.5 text-[15px] font-semibold hover:-translate-y-[1px] hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)] transition-all mt-2"
+          >
+            Masuk ke Dashboard
+          </button>
+        </form>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 export default function ProfilContent() {
   // 1. STATE UNTUK DATA PROFIL
   const [profileData, setProfileData] = useState({
+    foto: "/src/assets/Kopdes.png", // Ditambahkan untuk menyimpan path/URL foto
     nama: "Koperasi Desa Toyareja",
     slogan: "KOPDES TOYAREJA, Melayani dengan Hati, Membangun Desa Bersama",
     status: "Aktif",
@@ -29,6 +30,15 @@ export default function ProfilContent() {
     setFormData({ ...formData, [name]: value });
   };
 
+  // Handler khusus untuk membaca file foto yang diupload
+  const handleFotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setFormData({ ...formData, foto: imageUrl });
+    }
+  };
+
   const handleBukaModal = () => {
     setFormData(profileData); // Sinkronkan form dengan data terbaru
     setIsModalOpen(true);
@@ -46,10 +56,10 @@ export default function ProfilContent() {
       {/* Profil Hero */}
       <div className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-2xl p-8 text-white mb-5 flex gap-6 shadow-md justify-between">
         <div className="flex items-center gap-6">
-          <div className="w-[100px] h-[100px] bg-white rounded-2xl flex items-center justify-center text-[40px] flex-shrink-0">
-            {/* Gambar Profil */}
+          <div className="w-[100px] h-[100px] bg-white rounded-2xl flex items-center justify-center text-[40px] flex-shrink-0 overflow-hidden">
+            {/* Gambar Profil dinamis dari state */}
             <img
-              src="/src/assets/Kopdes.png"
+              src={profileData.foto}
               alt=""
               className="w-full h-full object-contain"
             />
@@ -206,6 +216,28 @@ export default function ProfilContent() {
                 className="space-y-4 max-h-[70vh] overflow-y-auto pr-2"
               >
                 <div className="grid grid-cols-2 gap-4">
+                  {/* INPUT FOTO DITAMBAHKAN DI SINI */}
+                  <div className="col-span-2">
+                    <label className="text-xs font-bold text-dark block mb-1">
+                      Logo / Foto Koperasi
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 border border-gray-200 rounded-lg overflow-hidden bg-white flex-shrink-0">
+                        <img
+                          src={formData.foto}
+                          alt="preview"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFotoChange}
+                        className="w-full text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 outline-none cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="text-xs font-bold text-dark block mb-1">
                       Nama Koperasi

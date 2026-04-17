@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Modal from "./Modal";
 
-// --- HELPER FUNCTIONS ---
+// --- Fungsi Penolong ---
 
 // 1. Format untuk tampilan di Tabel & Stats (Contoh: Rp 1.000.000)
 const formatRupiah = (angka) => {
@@ -141,7 +141,7 @@ export default function SimpananContent() {
 
   return (
     <div className="animate-fadeInUp">
-      {/* ── HEADER ── */}
+      {/*  HEADER */}
       <div className="flex items-center justify-end mb-6">
         <button
           onClick={openAddModal}
@@ -151,7 +151,7 @@ export default function SimpananContent() {
         </button>
       </div>
 
-      {/* ── STATS GRID ── */}
+      {/* STATS GRID  */}
       <div className="grid grid-cols-3 gap-4 mb-7">
         <div className="bg-white border border-border rounded-2xl p-5 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md group">
           <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-600 to-blue-400"></div>
@@ -185,7 +185,7 @@ export default function SimpananContent() {
         </div>
       </div>
 
-      {/* ── SEARCH & FILTER ── */}
+      {/* SEARCH & FILTER  */}
       <div className="flex items-center gap-3 mb-5">
         <div className="relative flex-1">
           <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-light text-sm">
@@ -201,7 +201,7 @@ export default function SimpananContent() {
         </div>
       </div>
 
-      {/* ── TABEL DATA ── */}
+      {/* TABEL DATA  */}
       <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
         <div className="p-5 border-b border-border flex items-center justify-between">
           <h3 className="text-[15px] font-bold text-dark">
@@ -284,7 +284,7 @@ export default function SimpananContent() {
         </div>
       </div>
 
-      {/* ── MODAL FORM (TAMBAH/EDIT) ── */}
+      {/*  MODAL FORM (TAMBAH/EDIT)  */}
       <Modal
         isOpen={isFormModalOpen}
         onClose={closeFormModal}

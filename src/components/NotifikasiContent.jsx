@@ -274,7 +274,7 @@ export default function NotifikasiContent() {
   );
 }
 
-// --- HELPER COMPONENTS ---
+// COMPONENTS PENOLONG
 
 function NotifCard({ data, onEdit, onTarik }) {
   const styles = {

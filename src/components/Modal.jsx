@@ -10,7 +10,7 @@ export default function Modal({
 }) {
   if (!isOpen) return null;
 
-  // Kita membungkus modal dengan createPortal agar dia "keluar" dari layout sidebar/konten
+  // membungkus modal dengan createPortal agar dia "keluar" dari layout sidebar/konten
   return createPortal(
     <div className="fixed inset-0 z-[999] flex justify-center items-start overflow-y-auto pt-10 pb-10 backdrop-blur-md bg-[#0f1a2e]/40 animate-fadeIn">
       {/* Background overlay yang menutupi seluruh layar */}

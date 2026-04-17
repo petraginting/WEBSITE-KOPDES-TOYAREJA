@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import DashboardContent from "../components/DashboardContent";
 import AnggotaContent from "../components/AnggotaContent";
@@ -24,26 +24,62 @@ const titles = {
 
 export default function MainDashboard({ onLogout }) {
   const [activeSection, setActiveSection] = useState("dashboard");
+  // default ke true sidebar terbuka saat pertama kali
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   const [title, subtitle] = titles[activeSection] || [activeSection, ""];
+  // --- TANGGAL ---
+  const [currentDate, setCurrentDate] = useState("");
+  useEffect(() => {
+    const updateDate = () => {
+      const today = new Date();
+      const options = {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      };
+      setCurrentDate(today.toLocaleDateString("id-ID", options));
+    };
+
+    updateDate(); // Jalankan pertama kali
+    const interval = setInterval(updateDate, 60000); // Perbarui setiap 1 menit
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="flex w-full">
+    <div className="flex w-full overflow-hidden">
       <Sidebar
         activeSection={activeSection}
         setActiveSection={setActiveSection}
         onLogout={onLogout}
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
       />
 
-      <div className="ml-[260px] flex-1 min-h-screen bg-cream">
-        {/* Topbar */}
-        <div className="bg-white border-b border-border px-8 h-16 flex items-center justify-between fixed top-0 right-0 left-[260px] z-10">
-          <div>
-            <h1 className="text-lg font-bold text-dark">{title}</h1>
-            <p className="text-xs text-light">{subtitle}</p>
+      {/* Konten Utama: Margin kiri menyesuaikan lebar sidebar */}
+      <div
+        className={`flex-1 min-h-screen bg-cream transition-all duration-300 ease-in-out ${
+          isSidebarOpen ? "ml-[270px]" : "ml-[70px]"
+        }`}
+      >
+        {/* Topbar: Posisi kiri mengikuti lebar sidebar */}
+        <div
+          className={`bg-white border-b border-border px-8 h-16 flex items-center justify-between fixed top-0 right-0 z-10 transition-all duration-300 ease-in-out ${
+            isSidebarOpen ? "left-[270px]" : "left-[70px]"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-lg font-bold text-dark">{title}</h1>
+              <p className="text-xs text-light">{subtitle}</p>
+            </div>
           </div>
+
           <div className="flex items-center gap-3">
             <div className="text-xs text-light bg-blue-50 px-3 py-1.5 rounded-full border border-border">
-              📅 Sabtu, 07 Maret 2026
+              📅 {currentDate}
             </div>
             <div className="w-9 h-9 bg-blue-50 border border-border rounded-lg cursor-pointer flex items-center justify-center text-base relative hover:bg-blue-100 transition-all">
               🔔
@@ -54,7 +90,11 @@ export default function MainDashboard({ onLogout }) {
 
         {/* Content Area */}
         <div className="p-7 mt-16">
-          {activeSection === "dashboard" && <DashboardContent />}
+          {/* Mengirim setActiveSection sebagai prop ke DashboardContent */}
+          {activeSection === "dashboard" && (
+            <DashboardContent setActiveSection={setActiveSection} />
+          )}
+
           {activeSection === "anggota" && <AnggotaContent />}
           {activeSection === "simpanan" && <SimpananContent />}
           {activeSection === "produk" && <ProdukContent />}

@@ -59,7 +59,6 @@ export default function PrediksiStockContent() {
 
       {/* Tabel Data */}
       <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
-        {/* Tambahkan max-h dan overflow-y-auto untuk mengaktifkan sticky header */}
         <div className="overflow-x-auto overflow-y-auto max-h-[60vh] relative">
           <table className="w-full border-collapse text-[13.5px]">
             <thead className="sticky top-0 z-10">

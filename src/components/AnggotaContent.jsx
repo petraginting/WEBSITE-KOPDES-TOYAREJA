@@ -55,11 +55,11 @@ export default function AnggotaContent() {
     jenisKelamin: "Laki-laki",
     pekerjaan: "",
     tanggalBergabung: "",
-    status: "Aktif", // Default form
+    status: "Aktif",
   };
   const [formData, setFormData] = useState(initialFormState);
 
-  // --- LOGIKA SEARCH & FILTER ---
+  // LOGIKA SEARCH & FILTER
   const filteredMembers = members.filter((member) => {
     // Cek Search (Nama, No. Anggota, atau No. Telepon)
     const matchSearch =
@@ -74,7 +74,7 @@ export default function AnggotaContent() {
     return matchSearch && matchStatus;
   });
 
-  // --- FUNGSI CRUD ---
+  //  FUNGSI CRUD
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -126,7 +126,7 @@ export default function AnggotaContent() {
 
   return (
     <div className="animate-fadeInUp">
-      {/* ── HEADER ── */}
+      {/* HEADER  */}
       <div className="flex items-center justify-end mb-6">
         <button
           onClick={openAddModal}
@@ -136,7 +136,7 @@ export default function AnggotaContent() {
         </button>
       </div>
 
-      {/* ── SEARCH & FILTER ── */}
+      {/*  SEARCH & FILTER */}
       <div className="flex items-center gap-[12px] mb-[20px]">
         <div className="relative flex-1">
           <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-light text-[14px]">
@@ -164,7 +164,7 @@ export default function AnggotaContent() {
         </button>
       </div>
 
-      {/* ── TABEL DATA ── */}
+      {/* TABEL DATA */}
       <div className="bg-white border border-border rounded-[20px] overflow-hidden shadow-sm">
         <div className="px-[24px] py-[20px] border-b border-border flex items-center justify-between">
           <h3 className="text-[15px] font-bold text-dark">
@@ -286,7 +286,7 @@ export default function AnggotaContent() {
         </div>
       </div>
 
-      {/* ════════════════════════ MODAL FORM (CREATE/UPDATE) ════════════════════════ */}
+      {/*  MODAL FORM (CREATE/UPDATE) */}
       <Modal
         isOpen={isFormModalOpen}
         onClose={closeFormModal}
@@ -344,6 +344,10 @@ export default function AnggotaContent() {
               value={formData.nomorKTP}
               onChange={handleInputChange}
               type="text"
+              maxLength={16}
+              onInput={(e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, "");
+              }}
               placeholder="16 digit NIK"
               className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
             />
@@ -447,7 +451,7 @@ export default function AnggotaContent() {
         </div>
       </Modal>
 
-      {/* ════════════════════════ MODAL DETAIL LENGKAP ════════════════════════ */}
+      {/*  MODAL DETAIL LENGKAP  */}
       <Modal
         isOpen={isModalDetailOpen}
         onClose={() => setIsModalDetailOpen(false)}

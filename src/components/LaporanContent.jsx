@@ -12,7 +12,7 @@ export default function LaporanContent() {
       minimumFractionDigits: 0,
     }).format(val);
 
-  // --- LOGIKA FILTER ---
+  //  LOGIKA FILTER
   const filterByDate = (data) => {
     return data.filter((item) => {
       const date = new Date(item.tanggal);
@@ -25,14 +25,14 @@ export default function LaporanContent() {
   const filteredTransaksi = filterByDate(Data_Transaksi);
   const filteredSimpanan = filterByDate(Data_Simpanan);
 
-  // --- FUNGSI EXPORT EXCEL (CSV) ---
+  //  FUNGSI EXPORT EXCEL (CSV)
   const exportToCSV = (data, fileName, headers) => {
     if (data.length === 0) {
       alert("Tidak ada data untuk dieksport pada periode ini.");
       return;
     }
 
-    // Gabungkan Header dan Baris Data
+    // Gabung Header dan Baris Data
     const csvRows = [
       headers.join(","), // Baris pertama: Header
       ...data.map((row) => Object.values(row).join(",")), // Baris berikutnya: Data

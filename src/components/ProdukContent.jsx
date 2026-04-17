@@ -142,7 +142,7 @@ export default function ProdukContent() {
         )}
       </div>
 
-      {/* Modal - Gunakan Portal */}
+      {/* Modal - Menggunakan Portal */}
       {isModalOpen &&
         createPortal(
           <div className="fixed inset-0 z-[999] flex justify-center items-start overflow-y-auto pt-10 pb-10 backdrop-blur-md bg-black/40">
@@ -157,7 +157,7 @@ export default function ProdukContent() {
               </div>
 
               <form onSubmit={handleTambahProduk} className="space-y-4">
-                {/* Emoji Picker */}
+                {/* pilih emoji untu sementara */}
                 <div className="grid grid-cols-6 gap-2">
                   {[
                     "🛍️",

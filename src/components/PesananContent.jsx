@@ -23,7 +23,7 @@ export default function PesananContent() {
     }
   };
 
-  // --- FILTER & SEARCH ---
+  //  FILTER & SEARCH
   const filteredPesanan = pesananList.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -35,7 +35,7 @@ export default function PesananContent() {
     return matchesSearch && matchesStatus;
   });
 
-  // --- HITUNG STATS OTOMATIS ---
+  // HITUNG STATS OTOMATIS
   const stats = {
     menunggu: pesananList.filter((p) => p.status === "Menunggu").length,
     diproses: pesananList.filter((p) => p.status === "Diproses").length,
@@ -151,7 +151,7 @@ export default function PesananContent() {
   );
 }
 
-// --- SUB-KOMPONEN ---
+//  SUB-KOMPONEN
 
 function StatCardPesanan({ icon, value, label, colorClass }) {
   return (
