@@ -17,9 +17,11 @@ class Anggota extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        "user_id",
+        'nama_lengkap',
+        'nik',
+        'alamat',
+        'status_keanggotaan',
     ];
 
     protected $table = 'anggotas';
@@ -45,5 +47,10 @@ class Anggota extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

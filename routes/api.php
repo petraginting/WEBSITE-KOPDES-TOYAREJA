@@ -13,6 +13,9 @@ use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\DetailPesananController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnggotaController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\OtpController as AuthOtpController;
+use App\Http\Controllers\Auth\User\RegisterController;
 
 // Auth user (default Laravel)
 Route::get('/user', function (Request $request) {
@@ -38,9 +41,18 @@ Route::apiResource('keranjang', KeranjangController::class);
 Route::apiResource('simpanan', SimpananController::class);
 
 // Auth (register)
-Route::apiResource('admin', AdminController::class);
 Route::apiResource('anggota', AnggotaController::class);
 
+
+Route::prefix('auth')->group(function () {
+    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/register/send-otp', [RegisterController::class, 'sendOtpRegister']);
+    Route::post('/register/verify-otp', [RegisterController::class, 'register']);
+
+    Route::post('forgot-password/update', [AuthOtpController::class, 'updatePassword']);
+    Route::post('forgot-password/send-otp', [AuthOtpController::class, 'sendOtpForgotPassword']);
+    Route::post('forgot-password/verify-otp', [AuthOtpController::class, 'verifyOtpForgotPassword']);
+});
 
 
 

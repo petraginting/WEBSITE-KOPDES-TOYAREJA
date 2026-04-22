@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('anggotas', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+
+            $table->string('nama_lengkap');
+            $table->string('nik', 16)->unique();
+            $table->text('alamat')->nullable();
+            $table->enum('status_keanggotaan', ['aktif', 'tidak_aktif'])->default('aktif');
+
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
             $table->rememberToken();
             $table->timestamps();
         });
