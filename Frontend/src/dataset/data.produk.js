@@ -1,0 +1,47 @@
+export const List_products = [
+  {
+    id: 1,
+    emoji: "🍚",
+    name: "Beras Organik Premium",
+    category: "Sembako",
+    price: "Rp 65.000", // Tetap string tidak papa
+    stock: "240",
+    unit: "Per 5 kg",
+  },
+  {
+    id: 2,
+    emoji: "🧂",
+    name: "Garam Himalaya",
+    category: "Sembako",
+    price: "Rp 25.000",
+    stock: "150",
+    unit: "Per 100gr",
+  },
+  {
+    id: 3,
+    emoji: "🧈",
+    name: "Mentega Asli",
+    category: "Sembako",
+    price: "Rp 40.000",
+    stock: "80",
+    unit: "Per 500 gr",
+  },
+  {
+    id: 4,
+    emoji: "🥛",
+    name: "Susu Kambing Etawa",
+    category: "Sembako",
+    price: "Rp 50.000",
+    stock: "120",
+    unit: "Per liter",
+  },
+  {
+    id: 5,
+    emoji: "🍞",
+    name: "Roti Tawar",
+    category: "Sembako",
+    price: "Rp 15.000",
+    stock: "200",
+    unit: "Per 500 gr",
+  },
+];
