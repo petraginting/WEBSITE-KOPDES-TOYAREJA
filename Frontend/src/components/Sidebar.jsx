@@ -44,26 +44,6 @@ export default function Sidebar({
           isOpen ? "px-3 gap-1" : "px-0 justify-center"
         }`}
       >
-        {/* Tombol Hamburger */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-2 text-dark hover:bg-black/5 rounded-lg transition-colors focus:outline-none flex-shrink-0"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </button>
-
         {/* Logo Koperasi*/}
         {isOpen && (
           <div className="flex items-center gap-1 overflow-hidden cursor-pointer">
@@ -84,6 +64,26 @@ export default function Sidebar({
             </div>
           </div>
         )}
+
+        {/* Tombol Hamburger */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="p-2 text-dark hover:bg-black/5 rounded-lg transition-colors focus:outline-none flex-shrink-0"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
       </div>
 
       {/* MENU NAVIGASI */}
@@ -137,17 +137,6 @@ export default function Sidebar({
         {isOpen ? (
           // Mode Terbuka: Tampilkan info lengkap & tombol logout
           <>
-            <div className="flex items-center gap-2.5 p-2.5 bg-black/5 rounded-xl">
-              <div className="w-8 h-8 bg-gradient-to-br from-gold to-gold-light rounded-lg flex items-center justify-center text-base shadow-sm flex-shrink-0">
-                👤
-              </div>
-              <div className="overflow-hidden whitespace-nowrap">
-                <div className="text-[13px] font-semibold text-black">
-                  Admin Utama
-                </div>
-                <div className="text-[11px] text-black/60">Administrator</div>
-              </div>
-            </div>
             <button
               onClick={onLogout}
               className="w-full bg-white hover:bg-red-50 border border-black/20 rounded-xl text-black/80 text-[13px] p-2.5 flex items-center justify-center gap-1.5 hover:text-red-600 hover:border-red-200 transition-all shadow-sm whitespace-nowrap"

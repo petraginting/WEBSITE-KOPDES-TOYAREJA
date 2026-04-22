@@ -261,7 +261,7 @@ export default function AnggotaContent() {
           </table>
         </div>
 
-        {/* Pagination Asli dari HTML */}
+        {/* Pagination */}
         <div className="px-[24px] py-[16px] border-t border-border flex justify-between items-center text-[13px] text-light">
           <span>
             Menampilkan 1–{filteredMembers.length} dari {members.length} anggota
