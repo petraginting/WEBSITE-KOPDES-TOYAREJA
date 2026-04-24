@@ -6,8 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Simpanan extends Model
 {
-     protected $fillable = [
+    protected $fillable = [
         'jenis_simpanan',
-        'jumlah_transaksi'
+        'jumlah'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
 }

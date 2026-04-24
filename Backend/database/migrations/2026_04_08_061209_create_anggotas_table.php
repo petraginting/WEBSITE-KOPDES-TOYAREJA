@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('nik', 16)->unique();
             $table->text('alamat')->nullable();
             $table->enum('status_keanggotaan', ['aktif', 'tidak_aktif'])->default('aktif');
+            $table->integer('poin')->default(0);
 
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();

@@ -25,17 +25,32 @@ Route::get('/user', function (Request $request) {
 
 
 // Product
-Route::apiResource('products', ProductController::class);
+Route::apiResource('products', ProductController::class)->middleware('auth:sanctum');
 
 // Pesanan & detail (optional public kalau mau)
-Route::apiResource('pesanan', PesananController::class);
+Route::prefix('pesanan')->group(function () {
+    Route::get('/', [PesananController::class, 'index'])->middleware('auth:sanctum');
+    Route::post('/checkout', [PesananController::class, 'checkout'])->middleware('auth:sanctum');
+    Route::get('/{pesanan}', [PesananController::class, 'show'])->middleware('auth:sanctum');
+    Route::delete('/{pesanan}', [PesananController::class, 'destroy'])->middleware('auth:sanctum');
+    Route::put('/{pesanan}/update-status', [PesananController::class, 'updateStatus'])->middleware('auth:sanctum');
+});
 
-// Notifikasi & laporan
-Route::apiResource('notifikasi', NotifikasiController::class);
-Route::apiResource('laporan', LaporanController::class);
+// Notifikasi
+Route::prefix('notifikasi')->group(function () {
+    Route::get('/', [NotifikasiController::class, 'index'])->middleware('auth:sanctum');
+    Route::post('/add', [NotifikasiController::class, 'store'])->middleware('auth:sanctum');
+    Route::put('/update/{notifikasi}', [NotifikasiController::class, 'update'])->middleware('auth:sanctum');
+    Route::delete('/delete/{notifikasi}', [NotifikasiController::class, 'destroy'])->middleware('auth:sanctum');
+});
 
 // Keranjang
-Route::apiResource('keranjang', KeranjangController::class);
+Route::prefix('keranjang')->group(function () {
+    Route::get('/', [KeranjangController::class, 'index'])->middleware('auth:sanctum');
+    Route::post('/add', [KeranjangController::class, 'store'])->middleware('auth:sanctum');
+    Route::put('/{keranjang}', [KeranjangController::class, 'update'])->middleware('auth:sanctum');
+    Route::delete('/{keranjang}', [KeranjangController::class, 'destroy'])->middleware('auth:sanctum');
+});
 
 // Simpanan
 Route::apiResource('simpanan', SimpananController::class);
@@ -49,7 +64,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/register/send-otp', [RegisterController::class, 'sendOtpRegister']);
     Route::post('/register/verify-otp', [RegisterController::class, 'register']);
 
-    Route::post('forgot-password/update', [AuthOtpController::class, 'updatePassword']);
+    Route::post('forgot-password/reset', [AuthOtpController::class, 'updatePassword']);
     Route::post('forgot-password/send-otp', [AuthOtpController::class, 'sendOtpForgotPassword']);
     Route::post('forgot-password/verify-otp', [AuthOtpController::class, 'verifyOtpForgotPassword']);
 });

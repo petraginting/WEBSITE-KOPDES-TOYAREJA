@@ -10,6 +10,7 @@ class Detail_pesanan extends Model
         'pesanan_id',
         'product_id',
         'jumlah',
+        'harga_satuan',
         'subtotal'
     ];
 

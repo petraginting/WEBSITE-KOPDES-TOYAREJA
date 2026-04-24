@@ -22,6 +22,7 @@ class Anggota extends Authenticatable
         'nik',
         'alamat',
         'status_keanggotaan',
+        'poin'
     ];
 
     protected $table = 'anggotas';

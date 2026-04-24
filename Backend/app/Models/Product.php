@@ -18,8 +18,8 @@ class Product extends Model
 
     protected $table = 'products';
 
-      public function details(): HasMany
+      public function keranjang(): HasMany
     {
-        return $this->hasMany(Detail_pesanan::class);
+        return $this->hasMany(Keranjang::class);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Simpanan;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\Mime\Message;
 
@@ -37,23 +38,38 @@ class SimpananController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'jenis_simpanan' => 'required|string|max:100',
-            'jumlah_transaksi' => 'required|numeric|min:0'
+        $request->validate([
+            'jenis_simpanan' => 'required|in:pokok,wajib,sukarela',
+            'jumlah' => 'required|interger|min:1'
         ]);
 
-        if (!$validator->fails()){ 
+        if ($request->jumlah !== 50000 && $request->jenis_simpanan === 'pokok') {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation Error ',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Simpanan pokok minimal dan maksimal Rp50.000'
+            ]);
+        } 
+        
+        if ($request->jumlah !== 5000 && $request->jenis_simpanan === 'wajib') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Simpanan wajib minimal dan maksimal Rp5.000'
+            ]);
+        } 
+
+        if ($request->jumlah < 5000 && $request->jenis_simpanan === 'sukarela') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Simpanan sukarela minimal Rp5.000'
+            ]);
         }
 
-        $simpanan = Simpanan::create([
-            'jenis_simpanan' => $request->jenis_simpanan,
-            'jumlah_transaksi' => $request->jumlah_transaksi
-        ]);
+        $user = Auth::user();
+
+        
+
+
+
     }
 
 

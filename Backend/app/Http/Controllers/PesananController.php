@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Anggota;
+use App\Models\Detail_pesanan;
+use App\Models\Keranjang;
 use App\Models\Pesanan;
 use App\Models\Product;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Database\Query\Grammars\PostgresGrammar;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class PesananController extends Controller
@@ -38,35 +43,101 @@ class PesananController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function checkout(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'metode_pembayaran' => 'required|string|max:50',
-            'status_pesanan' => 'required|in:tunggu,proses,selesai,batal',
-            'alamat_pengiriman' => 'required|string|max:255'
+        $request->validate([
+            'keranjang_id' => 'required|array',
+            'keranjang_id.*' => 'exists:keranjangs,id',
+            'metode_pembayaran' => 'required|string|in:qris,cod',
+            'alamat_pengiriman' => 'required|string|max:255',
+
+            'bukti_pembayaran' => [
+                'required_if:metode_pembayaran,qris',
+                'nullable',
+                'image',
+                'mimes:jpeg,png,jpg,gif',
+                'max:2048'
+            ]
         ]);
 
-        if ($validator->fails()){ 
+        return DB::transaction(function () use ($request) {
+            $user = Auth::user();
+
+            $items = Keranjang::whereIn('id', $request->keranjang_id)
+                               ->where('user_id', $user->id)
+                               ->get();
+            
+            if ($items->isEmpty()) {
+                return response()->json(['message' => 'Barang belum dipilih'], 400);
+            }
+
+            // Cek apakah jumlah yang ditemukan sama dengan jumlah yang dikirim
+            // Jika berbeda, berarti user mencoba mengakses ID keranjang milik orang lain
+            if ($items->count() !== count($request->keranjang_id)) {
+                return response()->json(['message' => 'Akses ditolak atau data tidak valid'], 403);
+            }
+
+            // Logika upload file (Hanya jalan jika ada file yang dikirim)
+            $path = null;
+            
+            if ($request->hasFile('bukti_pembayaran')) {
+                $file = $request->file('bukti_pembayaran');
+                $filename = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('bukti_pembayaran', $filename, 'public');
+            }
+
+            // 4. Hitung Total Harga
+            $totalHarga = $items->sum(function($item) {
+                return $item->product->harga * $item->kuantitas;
+            });
+
+            $anggota = Anggota::find('user_id', $user->id);
+
+            if ($totalHarga >= 50000) {
+                $anggota->increment('poin', $totalHarga/50000);
+            }
+
+            // 5. Simpan Pesanan (Header)
+            $pesanan = Pesanan::create([
+                'user_id'           => $user->id,
+                'total_harga'       => $totalHarga,
+                'metode_pembayaran' => $request->metode_pembayaran,
+                'bukti_pembayaran'  => $path, // Simpan path gambar
+                'status_pesanan'    => ($request->metode_pembayaran === 'cod') ? 'diproses' : 'pending',
+                'alamat_pengiriman' => $request->alamat_pengiriman
+            ]);
+
+            // 6. Simpan Detail Pesanan
+            foreach ($items as $item) {
+                Detail_pesanan::create([
+                    'pesanan_id' => $pesanan->id,
+                    'product_id'  => $item->product_id,
+                    'jumlah'      => $item->kuantitas,
+                    'harga_satuan'=> $item->product->harga,
+                    'subtotal'    => $item->product->harga * $item->kuantitas
+                ]);
+
+                // 7. Update Stok Produk
+                $product = Product::find($item->product_id);
+                if ($product->stok < $item->kuantitas) {
+                    // Jika stok tidak mencukupi, rollback transaksi dan kembalikan error
+                    throw new \Exception("Stok produk '{$product->nama_produk}' tidak mencukupi.");
+                }
+                $product->decrement('stok', $item->kuantitas);
+
+                // 8. Hapus Item dari Keranjang
+                $item->delete();
+            }
+
             return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
+                'success' => true,
+                'message' => 'Pesanan berhasil dibuat',
+                'data' => $pesanan->load('details.product')
+            ], 201);
 
-        $validated = $validator->validated();
+        });
 
-        $pesanan = Pesanan::create([
-            'metode_pembayaran' => $validated['metode_pembayaran'],
-            'status_pesanan' => $validated['status_pesanan'],
-            'alamat_pengiriman' => $validated['alamat_pengiriman'],
-            'total_harga' => 0 // awal 0
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Pesanan berhasil dibuat',
-            'data' => $pesanan
-        ], 201);
+        
     }
 
     /**
@@ -100,30 +171,32 @@ class PesananController extends Controller
     /**
      * Update the specified resource in storage.
      */
-   public function update(Request $request, $id)
+   public function updateStatus(Request $request, $id)
     {
-        $pesanan = Pesanan::findOrFail($id);
+        $user = Auth::user();
 
-        $validator = Validator::make($request->all(), [
-            'status_pesanan' => 'sometimes|in:tunggu,proses,selesai,batal',
-            'alamat_pengiriman' => 'sometimes|string|max:255'
-        ]);
-
-        if ($validator->fails()){ 
+        if (!$user->role === 'admin') {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Akses ditolak'
+            ], 403);
         }
 
-        $validated = $validator->validated();
+        $pesanan = Pesanan::findOrFail($id);
 
-        $pesanan->update($validated);
+        $request->validate([
+            'status_pesanan' => 'required|in:pending,diproses,selesai,dibatalkan'
+        ]);
+
+        $pesanan->update([
+            'status_pesanan' => $request->status_pesanan
+        ]);
 
         return response()->json([
             'success' => true,
+            'message' => 'Status pesanan diperbarui',
             'data' => $pesanan
-        ]);
+         ]);
     }
 
     /**
@@ -132,11 +205,19 @@ class PesananController extends Controller
     public function destroy($id)
     {
         $pesanan = Pesanan::findOrFail($id);
-        $pesanan->delete();
+
+        if ($pesanan->status_pesanan === 'selesai') {
+            $pesanan->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pesanan dihapus'
+            ]);
+        }
 
         return response()->json([
-            'success' => true,
-            'message' => 'Pesanan dihapus'
+            'success' => false,
+            'message' => 'Pesanan tidak dapat dihapus'
         ]);
     }
 }

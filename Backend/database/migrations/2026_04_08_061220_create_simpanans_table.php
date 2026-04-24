@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('simpanans', function (Blueprint $table) {
             $table->id();
-            $table->string('jenis_simpanan');
+            $table->foreignId('anggota_id')->constrained();
+            $table->enum('jenis_simpanan', ['pokok', 'wajib', 'sukarela']);
             $table->integer('jumlah');
             $table->timestamps();
         });

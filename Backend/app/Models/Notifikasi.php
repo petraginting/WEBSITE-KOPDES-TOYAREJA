@@ -7,8 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class Notifikasi extends Model
 {
     protected $fillable = [
-        'judul',
+        'tipe_notifikasi',
+        'target',
+        'judul_notifikasi',
         'isi_pesan',
-        'tipe_notifikasi'
+        'tanggal_berlaku',
+        'status'
+    ];
+
+    protected $casts = [
+        'tanggal_berlaku' => 'datetime:Y-m-d H:i:s'
     ];
 }

@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('notifikasis', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
-            $table->string('judul');
+            $table->enum('tipe_notifikasi', ['info', 'promo', 'produk']);
+            $table->enum('target', ['semua', 'aktif', 'anggota']);
+            $table->string('judul_notifikasi');
             $table->string('isi_pesan');
-            $table->string('tipe_notifikasi');
+            $table->timestamp('tanggal_berlaku');
+            $table->enum('status', ['aktif', 'expired']);
+
+            $table->timestamps();
             
         });
     }

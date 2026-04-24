@@ -52,4 +52,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(Anggota::class);
     }
+
+    public function keranjang()
+    {
+        return $this->hasMany(Keranjang::class);
+    }
+
+    public function simpanan()
+    {
+        return $this->hasMany(Simpanan::class);
+    }
 }

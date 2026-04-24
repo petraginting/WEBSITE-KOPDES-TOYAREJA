@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notifikasi;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class NotifikasiController extends Controller
@@ -13,10 +15,12 @@ class NotifikasiController extends Controller
      */
     public function index()
     {
+        Notifikasi::where('status', 'aktif')->where('tanggal_berlaku', '<', now())->update(['status' => 'expired']);
+
         $data = Notifikasi::latest()->get();
 
         return response()->json([
-            'success' => 'true',
+            'success' => true,
             'message' => 'List Notifikasi',
             'data' => $data
         ], 200);
@@ -35,27 +39,39 @@ class NotifikasiController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(),[
-            'judul' => 'required|string|max:150',
-            'isi_pesanan' => 'required|string|max:500',
-            'tipe_notifikasi' => 'required|in:info,warning,promo,system'
-
-        ]);
-
-        if ($validator->fails()) {
-            
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation Error',
-            'errors' => $validator->errors()
-        ], 422);
-            
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak, Anda bukan admin',
+            ], 403);
         }
 
-         $notifikasi = Notifikasi::create([
-            'judul' => $request->judul,
+        $validator = Validator::make($request->all(),[
+            'tipe_notifikasi' => 'required|in:info,promo,produk',
+            'target' => 'required|in:semua,aktif,anggota',
+            'judul_notifikasi' => 'required|string|max:255',
+            'isi_pesan' => 'required|string',
+            'tanggal_berlaku' => 'required|date_format:Y-m-d H:i:s'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation Error',
+                'errors' => $validator->errors()
+            ], 422);   
+        }
+
+        $tanggalBerlaku = Carbon::parse($request->tanggal_berlaku);
+        $status = $tanggalBerlaku->isFuture() ? 'aktif' : 'expired';
+
+        $notifikasi = Notifikasi::create([
+            'tipe_notifikasi' => $request->tipe_notifikasi,
+            'target' => $request->target,
+            'judul_notifikasi' => $request->judul_notifikasi,
             'isi_pesan' => $request->isi_pesan,
-            'tipe_notifikasi' => $request->tipe_notifikasi
+            'tanggal_berlaku' => $request->tanggal_berlaku,
+            'status' => $status
         ]);
 
         return response()->json([
@@ -90,10 +106,20 @@ class NotifikasiController extends Controller
      */
     public function update(Request $request, Notifikasi $notifikasi)
     {
+
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak, Anda bukan admin',
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
-            'judul' => 'sometimes|string|max:150',
-            'isi_pesan' => 'sometimes|string|max:500',
-            'tipe_notifikasi' => 'sometimes|in:info,warning,promo,system'
+            'tipe_notifikasi' => 'sometimes|in:info,promo,produk',
+            'target' => 'sometimes|in:semua,aktif,anggota',
+            'judul_notifikasi' => 'sometimes|string|max:255',
+            'isi_pesanan' => 'sometimes|string',
+            'tanggal_berlaku' => 'sometimes|date_format:Y-m-d H:i:s'
         ]);
 
         if ($validator->fails()) { 
@@ -104,7 +130,17 @@ class NotifikasiController extends Controller
             ], 422);
         }
 
-         $notifikasi->update($request->all());
+
+        // Ambil semua input
+        $data = $request->all();
+
+        // LOGIKA TAMBAHAN: Jika tanggal_berlaku ikut diupdate, hitung ulang statusnya
+        if ($request->has('tanggal_berlaku')) {
+            $tanggalBerlaku = \Carbon\Carbon::parse($request->tanggal_berlaku);
+            $data['status'] = $tanggalBerlaku->isFuture() ? 'aktif' : 'expired';
+        }
+
+        $notifikasi->update($data);
 
         return response()->json([
             'success' => true,
@@ -118,6 +154,13 @@ class NotifikasiController extends Controller
      */
     public function destroy(Notifikasi $notifikasi)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak, Anda bukan admin',
+            ], 403);
+        }
+
         $notifikasi->delate();
         return response()->json([
             'success' => true,
