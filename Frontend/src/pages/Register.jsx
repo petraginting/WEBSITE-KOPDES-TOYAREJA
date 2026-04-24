@@ -25,9 +25,12 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      await api.post("/register", formData);
-      alert("Registrasi Berhasil! Silakan Login.");
-      navigate("/");
+      const response = await api.post("/auth/register/send-otp", formData);
+
+      if (response.data.success) {
+        alert("Registrasi Berhasil! Silakan Login.");
+        navigate("/");
+      }
     } catch (error) {
       console.error("Registrasi Gagal:", error);
       alert("Terjadi kesalahan saat registrasi.");
