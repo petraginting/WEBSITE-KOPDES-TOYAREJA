@@ -14,8 +14,7 @@ class LoginController extends Controller
     {
         $request->validate([
             'username' => 'required',
-            'password' => 'required',
-            'device_name' => 'required'
+            'password' => 'required'
         ]);
 
         $user = User::where('username', $request->username)->first();
@@ -26,7 +25,7 @@ class LoginController extends Controller
 
         // Jika login berhasil, buat token akses
         return response()->json([
-            'success' => true,
+            'status' => 'success',
             'message' => 'Login successful',
             'data' => [
                 'user' => $user,

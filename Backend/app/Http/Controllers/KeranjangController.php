@@ -34,6 +34,7 @@ class KeranjangController extends Controller
      */
     public function store(Request $request)
     {
+<<<<<<< Updated upstream
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'kuantitas' => 'required|integer|min:1|max:1000'
@@ -70,6 +71,28 @@ class KeranjangController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Produk berhasil ditambahkan ke keranjang',
+=======
+        $validator =Validator::make($request->sll(),[
+            'kuantitas' => 'required|integer|min:1|max:1000'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json([
+                'success' => false, 
+                'message' => 'Validation Errors',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $keranjang = Keranjang::create([
+            'kuantitas' => $request->kuantitas
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item berhasil ditambahkan ke keranjang',
+            'data' => $keranjang
+>>>>>>> Stashed changes
         ], 201);
     }
 
@@ -78,7 +101,15 @@ class KeranjangController extends Controller
      */
     public function show(Keranjang $keranjang)
     {
+<<<<<<< Updated upstream
         
+=======
+        return response()->json([
+            'success' => true,
+            'message' => 'Item dikeranjang berhasil ditampilkan',
+            'data' => $keranjang
+        ], 201);
+>>>>>>> Stashed changes
     }
 
     /**
@@ -94,6 +125,7 @@ class KeranjangController extends Controller
      */
     public function update(Request $request, Keranjang $keranjang)
     {
+<<<<<<< Updated upstream
         $request->validate([
             'kuantitas' => 'required|integer|min:1|max:1000'
         ]);
@@ -112,13 +144,29 @@ class KeranjangController extends Controller
         // jika user ingin mengurangkan kuantitas, pastikan tidak boleh kurang dari 0 yang ada di keranjang
         if ($request->kuantitas < 0) {
             return response()->json(['message' => 'Kuantitas tidak boleh negatif'], 400);
+=======
+        $validator = Validator::make($request->all(), [
+            'kuantitas' => 'sometimes|integer|min:1|max:1000'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation Error',
+                'errors' => $validator->errors()
+            ], 422);
+>>>>>>> Stashed changes
         }
 
         $keranjang->update($request->only(['kuantitas']));
 
         return response()->json([
             'success' => true,
+<<<<<<< Updated upstream
             'message' => 'Kuantitas berhasil diupdate',
+=======
+            'message' => 'Keranjang berhasil diupdate',
+>>>>>>> Stashed changes
             'data' => $keranjang
         ], 200);
     }
@@ -128,6 +176,7 @@ class KeranjangController extends Controller
      */
     public function destroy(Keranjang $keranjang)
     {
+<<<<<<< Updated upstream
         $user = Auth::user();
 
         // Pastikan item keranjang yang akan dihapus milik user yang sedang login
@@ -135,6 +184,8 @@ class KeranjangController extends Controller
             return response()->json(['message' => 'Anda tidak memiliki izin untuk menghapus item ini'], 403);
         }
 
+=======
+>>>>>>> Stashed changes
         $keranjang->delete();
 
         return response()->json([

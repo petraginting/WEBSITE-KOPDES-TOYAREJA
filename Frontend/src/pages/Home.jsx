@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // <-- Tambahkan import ini
-import api from "../api/axios";
+import { api } from "../api/axios";
 import BottomNav from "../components/BottomNav";
 import logokopdes from "../assets/favnbg.png";
 

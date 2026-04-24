@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import { api } from "../api/axios";
 import InputField from "../components/InputField";
 import llogin from "../assets/Kopdes.png";
 
 export default function Register() {
   const navigate = useNavigate();
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [formData, setFormData] = useState({
     nama_lengkap: "",
-    nohp: "",
+    no_hp: "",
+    nik: "",
     password: "",
-    password_confirmation: "",
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,20 +21,30 @@ export default function Register() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.password_confirmation)
+    if (formData.password !== confirmPassword)
       return alert("Password tidak cocok!");
 
     setIsLoading(true);
     try {
-      const response = await api.post("/auth/register/send-otp", formData);
+      const response = await api.post("/auth/register/send-otp", {
+        nama_lengkap: formData.nama_lengkap,
+        no_hp: formData.no_hp,
+        nik: formData.nik,
+        password: formData.password,
+        password_confirmation: confirmPassword,
+      });
 
-      if (response.data.success) {
-        alert("Registrasi Berhasil! Silakan Login.");
-        navigate("/");
+      if (response?.data) {
+        sessionStorage.setItem("no_hp", formData.no_hp);
+        alert("Registrasi Berhasil! Silakan cek OTP Anda.");
+        navigate("/verify");
+      } else {
+        console.log(response?.data);
+        alert(response?.data);
       }
     } catch (error) {
-      console.error("Registrasi Gagal:", error);
-      alert("Terjadi kesalahan saat registrasi.");
+      console.error("Registrasi Gagal:", error.response?.data?.message);
+      alert(error.response?.data || "Terjadi kesalahan saat registrasi");
     } finally {
       setIsLoading(false);
     }
@@ -97,16 +108,25 @@ export default function Register() {
               icon={UserIcon}
             />
             <InputField
-              label="No HP"
-              name="nohp"
+              label="NIK"
+              name="nik"
               type="text"
-              value={formData.nohp}
+              value={formData.nik}
+              onChange={handleChange}
+              placeholder="Masukkan NIK anda"
+              icon={UserIcon}
+            />
+            <InputField
+              label="No HP"
+              name="no_hp"
+              type="text"
+              value={formData.no_hp}
               onChange={handleChange}
               placeholder="08XXXXXXXXX"
               icon={PhoneIcon}
               inputMode="numeric"
               pattern="[0-9]*"
-              maxLenght={13}
+              maxLength={13}
             />
             <InputField
               label="Password"
@@ -121,8 +141,8 @@ export default function Register() {
               label="Konfirmasi Password"
               name="password_confirmation"
               type="password"
-              value={formData.password_confirmation}
-              onChange={handleChange}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Konfirmasi Password"
               icon={LockIcon}
             />

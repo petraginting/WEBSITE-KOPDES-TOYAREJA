@@ -10,7 +10,8 @@ import Profile from "./pages/Profile";
 import Keranjang from "./pages/Keranjang";
 import ProductDetail from "./pages/ProductDetail";
 import ResetPassword from "./pages/ResetPassword";
-import VerifyOtp from "./pages/VerifyOTP";
+import VerifyFPW from "./pages/VerifyForgotPW";
+import VerifyRegist from "./pages/VerifyRegist";
 import MainDashboard from "./pages/MainDashboard";
 
 export default function App() {
@@ -20,11 +21,12 @@ export default function App() {
         {/* Halaman login */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="verify-register" element={<VerifyRegist />} />
 
         {/* Lupa Password */}
         <Route path="/forgot-password">
           <Route index element={<ForgotPassword />} />
-          <Route path="verify" element={<VerifyOtp />} />
+          <Route path="verify-forgot-password" element={<VerifyFPW />} />
           <Route path="reset-password" element={<ResetPassword />} />
         </Route>
 

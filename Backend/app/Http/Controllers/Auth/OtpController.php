@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\OtpCode;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class OtpController extends Controller
@@ -97,6 +98,12 @@ class OtpController extends Controller
             return response()->json(['message' => 'Kode OTP sudah kadaluwarsa.'], 422);
         }
 
+<<<<<<< Updated upstream
+=======
+        // Simpan nomor HP yang sudah verifikasi OTP di session
+        session(['otp_verified_no_hp' => $no_hp]);
+
+>>>>>>> Stashed changes
         return response()->json([
             'success' => true,  
             'message' => 'Kode OTP berhasil diverifikasi.'
@@ -106,6 +113,7 @@ class OtpController extends Controller
     public function updatePassword(Request $request)
     {
         $request->validate([
+<<<<<<< Updated upstream
             'no_hp' => 'required',
             'new_password' => 'required|min:6',
         ]);
@@ -117,6 +125,23 @@ class OtpController extends Controller
         $user->update(['password' => Hash::make($request->new_password)]);
 
         // Hapus session OTP yang sudah diverifikasi dan OTP yang sudah digunakan
+=======
+            'new_password' => 'required|min:6',
+        ]);
+
+        $no_hp = session('otp_verified_no_hp');
+
+        if (!$no_hp) {
+            return response()->json(['message' => 'Sesi habis, silakan verifikasi ulang.'], 403);
+        }
+
+        // Update password pengguna
+        $user = User::where('no_hp', $no_hp)->first();
+        $user->update(['password' => Hash::make($request->new_password)]);
+
+        // Hapus session OTP yang sudah diverifikasi dan OTP yang sudah digunakan
+        session()->forget('otp_verified_no_hp');
+>>>>>>> Stashed changes
         OtpCode::where('no_hp', $no_hp)->delete();
 
 

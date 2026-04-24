@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../api/axios";
+import { api } from "../api/axios";
 import BottomNav from "../components/BottomNav";
 
 export default function Simpanan() {

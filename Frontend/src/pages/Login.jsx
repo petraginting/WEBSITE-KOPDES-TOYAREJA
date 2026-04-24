@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import { api } from "../api/axios";
 import InputField from "../components/InputField";
 import llogin from "../assets/Kopdes.png";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    device_name: "web app",
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -18,14 +22,20 @@ export default function Login() {
     setIsLoading(true);
     try {
       // Sesuaikan '/login' dengan route API Laravel Anda
-      const response = await api.post("/login", formData);
-      console.log("Login Sukses:", response.data);
-      // Simpan token ke localStorage jika ada: localStorage.setItem('token', response.data.token);
-      alert("Login Berhasil!");
+      const response = await api.post("/auth/login", formData);
+
+      if (response.data) {
+        console.log("Login Sukses:", response.data);
+        // Simpan token ke localStorage jika ada: localStorage.setItem('token', response.data.token);
+        alert("Login Berhasil!");
+        navigate("/");
+      } else {
+        alert(response.data);
+      }
       // navigate('/dashboard-pelanggan');
     } catch (error) {
       console.error("Login Gagal:", error);
-      alert("Login gagal, periksa username atau password.");
+      alert(error.response.data);
     } finally {
       setIsLoading(false);
     }
@@ -68,12 +78,12 @@ export default function Login() {
         <div className="w-full bg-white rounded-[28px] shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-200 p-6 sm:p-8">
           <form onSubmit={handleLogin}>
             <InputField
-              label="Username"
+              label="NIK"
               name="username"
               type="text"
               value={formData.username}
               onChange={handleChange}
-              placeholder="Masukkan Username"
+              placeholder="Masukkan NIK anda"
               icon={UserIcon}
             />
             <InputField
