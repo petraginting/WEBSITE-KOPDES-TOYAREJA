@@ -150,7 +150,6 @@ export default function SimpananContent() {
           + Tambah Simpanan
         </button>
       </div>
-
       {/* STATS GRID  */}
       <div className="grid grid-cols-3 gap-4 mb-7">
         <div className="bg-white border border-border rounded-2xl p-5 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md group">

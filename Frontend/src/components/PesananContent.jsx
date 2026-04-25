@@ -1,33 +1,76 @@
-import { useState } from "react";
-import { List_pesanan } from "../dataset/data.pesanan";
+import { useState, useEffect } from "react";
+// Pastikan path import API ini sesuai dengan folder Anda (seperti di VerifyRegist sebelumnya)
+import { api } from "../api/axios";
 
 export default function PesananContent() {
-  const [pesananList, setPesananList] = useState(List_pesanan);
+  // 1. STATE UNTUK API & MODAL
+  const [pesananList, setPesananList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedPesanan, setSelectedPesanan] = useState(null); // State untuk Modal Detail
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua Status");
 
-  // --- LOGIKA CRUD ---
+  // 2. MENGAMBIL DATA DARI BACKEND (READ)
+  useEffect(() => {
+    fetchDataPesanan();
+  }, []);
 
-  // Update Status
-  const handleUpdateStatus = (id, newStatus) => {
-    const updated = pesananList.map((item) =>
-      item.id === id ? { ...item, status: newStatus } : item,
-    );
-    setPesananList(updated);
-  };
-
-  // Hapus Pesanan
-  const handleHapusPesanan = (id) => {
-    if (window.confirm("Hapus data pesanan ini?")) {
-      setPesananList(pesananList.filter((item) => item.id !== id));
+  const fetchDataPesanan = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get("/pesanan");
+      setPesananList(response.data);
+    } catch (error) {
+      console.error("Gagal mengambil data:", error);
+      alert("Gagal memuat data pesanan dari server.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  //  FILTER & SEARCH
+  // 3. LOGIKA CRUD KE BACKEND
+
+  // Update Status API
+  const handleUpdateStatus = async (id, newStatus) => {
+    try {
+      await api.patch(`/pesanan/${id}/status`, { status: newStatus });
+
+      // Jika berhasil di backend, update tampilan di frontend
+      const updated = pesananList.map((item) =>
+        item.id === id ? { ...item, status: newStatus } : item,
+      );
+      setPesananList(updated);
+    } catch (error) {
+      console.error("Gagal update status:", error);
+      alert("Terjadi kesalahan saat mengubah status.");
+    }
+  };
+
+  // Hapus Pesanan API
+  const handleHapusPesanan = async (id) => {
+    if (window.confirm("Hapus data pesanan ini secara permanen?")) {
+      try {
+        await api.delete(`/pesanan/${id}`);
+
+        // Update tampilan frontend setelah berhasil dihapus di backend
+        setPesananList(pesananList.filter((item) => item.id !== id));
+      } catch (error) {
+        console.error("Gagal menghapus:", error);
+        alert("Terjadi kesalahan saat menghapus data.");
+      }
+    }
+  };
+
+  // FILTER & SEARCH
   const filteredPesanan = pesananList.filter((item) => {
+    // Tambahkan pengaman (opsional) jika data dari backend ada yang null
+    const name = item.name || "";
+    const orderId = item.orderId || "";
+
     const matchesSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.orderId.toLowerCase().includes(searchQuery.toLowerCase());
+      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      orderId.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
       statusFilter === "Semua Status" || item.status === statusFilter;
@@ -44,8 +87,8 @@ export default function PesananContent() {
   };
 
   return (
-    <div className="animate-fadeInUp">
-      {/* Stats Grid - Sekarang Dinamis */}
+    <div className="animate-fadeInUp relative">
+      {/* --- KODE STATS & SEARCH TETAP SAMA --- */}
       <div className="grid grid-cols-4 gap-4 mb-7">
         <StatCardPesanan
           icon="⏳"
@@ -73,7 +116,6 @@ export default function PesananContent() {
         />
       </div>
 
-      {/* Search & Filter */}
       <div className="flex items-center gap-3 mb-5">
         <div className="relative flex-1">
           <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-light text-sm">
@@ -105,6 +147,7 @@ export default function PesananContent() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[13.5px]">
             <thead>
+              {/* --- BAGIAN THEAD SAMA --- */}
               <tr>
                 <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
                   No. Pesanan
@@ -124,34 +167,52 @@ export default function PesananContent() {
                 <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
                   Status
                 </th>
-                <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
+                <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left text-center">
                   Aksi
                 </th>
               </tr>
             </thead>
             <tbody>
-              {filteredPesanan.map((order) => (
-                <TableRow
-                  key={order.id}
-                  data={order}
-                  onUpdateStatus={handleUpdateStatus}
-                  onDelete={handleHapusPesanan}
-                />
-              ))}
+              {isLoading ? (
+                <tr>
+                  <td colSpan="7" className="text-center p-10 text-gray-500">
+                    Memuat data dari server...
+                  </td>
+                </tr>
+              ) : (
+                filteredPesanan.map((order) => (
+                  <TableRow
+                    key={order.id}
+                    data={order}
+                    onUpdateStatus={handleUpdateStatus}
+                    onDelete={handleHapusPesanan}
+                    // 4. Kirim fungsi klik detail ke TableRow
+                    onDetailClick={() => setSelectedPesanan(order)}
+                  />
+                ))
+              )}
             </tbody>
           </table>
-          {filteredPesanan.length === 0 && (
+          {!isLoading && filteredPesanan.length === 0 && (
             <div className="p-10 text-center text-light italic">
               Pesanan tidak ditemukan...
             </div>
           )}
         </div>
       </div>
+
+      {/* 5. TAMPILKAN MODAL JIKA ADA PESANAN YANG DIPILIH */}
+      {selectedPesanan && (
+        <DetailModal
+          data={selectedPesanan}
+          onClose={() => setSelectedPesanan(null)}
+        />
+      )}
     </div>
   );
 }
 
-//  SUB-KOMPONEN
+// --- SUB-KOMPONEN ---
 
 function StatCardPesanan({ icon, value, label, colorClass }) {
   return (
@@ -166,8 +227,8 @@ function StatCardPesanan({ icon, value, label, colorClass }) {
   );
 }
 
-function TableRow({ data, onUpdateStatus, onDelete }) {
-  // Formatter uang
+// Tambahkan prop onDetailClick di sini
+function TableRow({ data, onUpdateStatus, onDelete, onDetailClick }) {
   const formatIDR = (val) =>
     new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -175,7 +236,6 @@ function TableRow({ data, onUpdateStatus, onDelete }) {
       minimumFractionDigits: 0,
     }).format(val);
 
-  // Mapping gaya badge
   const statusStyles = {
     Selesai: "bg-emerald-100 text-emerald-700",
     Diproses: "bg-blue-100 text-blue-700",
@@ -199,8 +259,7 @@ function TableRow({ data, onUpdateStatus, onDelete }) {
           ● {data.status}
         </span>
       </td>
-      <td className="px-4 py-3 flex gap-2">
-        {/* Dropdown sederhana untuk ganti status */}
+      <td className="px-4 py-3 flex gap-2 justify-center items-center">
         <select
           className="text-[11px] border rounded p-1 outline-none"
           value={data.status}
@@ -211,14 +270,166 @@ function TableRow({ data, onUpdateStatus, onDelete }) {
           <option value="Selesai">Selesai</option>
           <option value="Dibatalkan">Batal</option>
         </select>
+
+        {/* Tombol Detail Ditambahkan di Sini */}
+        <button
+          onClick={onDetailClick}
+          className="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition-all flex items-center justify-center"
+          title="Lihat Detail"
+        >
+          👁️
+        </button>
+
         <button
           onClick={() => onDelete(data.id)}
-          className="text-red-500 hover:bg-red-50 p-1 rounded transition-all"
+          className="text-red-500 hover:bg-red-50 p-1.5 rounded transition-all flex items-center justify-center"
           title="Hapus"
         >
           🗑️
         </button>
       </td>
     </tr>
+  );
+}
+
+// 6. KOMPONEN BARU: MODAL DETAIL
+function DetailModal({ data, onClose }) {
+  // State untuk menyimpan daftar item dari tabel detail_pesanan
+  const [detailItems, setDetailItems] = useState([]);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  const formatIDR = (val) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(val);
+
+  // Fetch data detail pesanan saat modal dibuka
+  useEffect(() => {
+    const fetchDetailPesanan = async () => {
+      setIsLoadingDetails(true);
+      try {
+        // Sesuaikan endpoint ini dengan route 'show' di web.php / api.php Laravel Anda
+        // Contoh: Route::get('/detail-pesanan/{pesanan_id}', [DetailPesananController::class, 'show']);
+        const response = await api.get(`/detail-pesanan/${data.id}`);
+
+        // Mengambil array dari response JSON Laravel: 'data' => $details
+        setDetailItems(response.data.data);
+      } catch (error) {
+        console.error("Gagal mengambil detail pesanan:", error);
+      } finally {
+        setIsLoadingDetails(false);
+      }
+    };
+
+    if (data && data.id) {
+      fetchDetailPesanan();
+    }
+  }, [data]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl animate-fadeInUp p-6 max-h-[90vh] flex flex-col">
+        {/* HEADER MODAL */}
+        <div className="flex justify-between items-center border-b pb-4 mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-dark">Detail Pesanan</h2>
+            <p className="text-sm text-gray-500">#{data.orderId || data.id}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:bg-red-50 hover:text-red-500 w-8 h-8 rounded-full flex items-center justify-center text-2xl transition-all"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* INFO PELANGGAN */}
+        <div className="grid grid-cols-2 gap-4 mb-6 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <div>
+            <p className="text-gray-500 mb-1">Nama Anggota</p>
+            <p className="font-semibold text-dark">{data.name}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 mb-1">Status Pesanan</p>
+            <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">
+              {data.status}
+            </span>
+          </div>
+        </div>
+
+        {/* TABEL ITEM PRODUK (Dari DetailPesananController) */}
+        <div className="flex-1 overflow-y-auto border border-gray-200 rounded-xl">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead className="bg-gray-50 sticky top-0 shadow-sm">
+              <tr>
+                <th className="py-3 px-4 font-semibold text-gray-600 border-b">
+                  Produk
+                </th>
+                <th className="py-3 px-4 font-semibold text-gray-600 border-b text-center">
+                  Harga Satuan
+                </th>
+                <th className="py-3 px-4 font-semibold text-gray-600 border-b text-center">
+                  Jumlah
+                </th>
+                <th className="py-3 px-4 font-semibold text-gray-600 border-b text-right">
+                  Subtotal
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoadingDetails ? (
+                <tr>
+                  <td colSpan="4" className="py-8 text-center text-gray-500">
+                    <span className="animate-pulse">
+                      Memuat daftar produk...
+                    </span>
+                  </td>
+                </tr>
+              ) : detailItems.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="py-8 text-center text-gray-500">
+                    Tidak ada produk dalam pesanan ini.
+                  </td>
+                </tr>
+              ) : (
+                detailItems.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="border-b last:border-0 hover:bg-gray-50"
+                  >
+                    {/* Sesuaikan item.product.nama dengan nama kolom di tabel Product Anda */}
+                    <td className="py-3 px-4 font-medium text-dark">
+                      {item.product?.nama ||
+                        item.product?.name ||
+                        "Produk Tidak Diketahui"}
+                    </td>
+                    {/* Asumsi harga didapat dari harga produk dibagi jumlah atau langsung dari relasi */}
+                    <td className="py-3 px-4 text-center text-gray-600">
+                      {formatIDR(item.subtotal / item.jumlah)}
+                    </td>
+                    <td className="py-3 px-4 text-center font-medium">
+                      {item.jumlah}
+                    </td>
+                    <td className="py-3 px-4 text-right font-semibold text-blue-600">
+                      {formatIDR(item.subtotal)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* FOOTER TOTAL */}
+        <div className="mt-6 flex justify-between items-center border-t pt-4">
+          <span className="text-gray-500 font-medium">Total Keseluruhan</span>
+          <span className="text-2xl font-bold text-dark">
+            {formatIDR(data.total_harga || data.total)}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -37,13 +37,7 @@ export default function Home() {
   ];
 
   // Kategori statis sesuai desain
-  const categories = [
-    "Semua",
-    "Sembako",
-    "Kebutuhan Rumah",
-    // "Jajanan",
-    // "Lainnya",
-  ];
+  const categories = ["Semua", "Sembako", "Kebutuhan Rumah"];
 
   // Fungsi memanggil API Laravel
   useEffect(() => {
@@ -174,7 +168,7 @@ export default function Home() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-[15px] shadow-sm placeholder-gray-500"
-              placeholder="Cari sembako..."
+              placeholder="Cari..."
             />
           </div>
 

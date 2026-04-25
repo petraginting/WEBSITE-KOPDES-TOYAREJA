@@ -21,21 +21,33 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Sesuaikan '/login' dengan route API Laravel Anda
       const response = await api.post("/auth/login", formData);
 
       if (response.data) {
         console.log("Login Sukses:", response.data);
-        // Simpan token ke localStorage jika ada: localStorage.setItem('token', response.data.token);
+        // 1. Simpan Token ke sessionStorage
+        sessionStorage.setItem("token", response.data.data.token);
+        // 2. Simpan Role ke sessionStorage
+        const userRole = response.data.data.user.role;
+        sessionStorage.setItem("role", userRole);
+
         alert("Login Berhasil!");
-        navigate("/");
+        // 3. Arahkan (Navigate) berdasarkan Role
+        if (userRole === "admin") {
+          navigate("/admin"); //jika admin
+        } else {
+          navigate("/"); //jika user
+        }
       } else {
         alert(response.data);
       }
-      // navigate('/dashboard-pelanggan');
     } catch (error) {
       console.error("Login Gagal:", error);
-      alert(error.response.data);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data ||
+        "Koneksi server gagal silahkan coba lagi";
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }

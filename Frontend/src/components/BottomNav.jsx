@@ -8,7 +8,7 @@ export default function BottomNav() {
   const navItems = [
     {
       name: "Dashboard",
-      path: "/dashboard",
+      path: "/",
       icon: (
         <path
           strokeLinecap="round"

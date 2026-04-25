@@ -43,6 +43,28 @@ export default function VerifyRegist() {
     }
   };
 
+  const handleResendOTP = async () => {
+    const noHp = sessionStorage.getItem("no_hp");
+
+    if (!noHp)
+      return alert("Nomor HP tidak ditemukan, silakan register ulang.");
+
+    setIsLoading(true);
+    try {
+      // Sesuaikan endpoint ini dengan API backend Anda
+      await api.post("/auth/register/resend-otp", {
+        no_hp: noHp,
+      });
+      alert("Kode OTP baru telah dikirim!");
+
+      // Opsional: Anda bisa menambahkan logika untuk mereset timer 28s di sini
+    } catch (error) {
+      console.error("Gagal mengirim ulang OTP:", error);
+      alert("Gagal mengirim ulang OTP. Silakan coba lagi.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-white flex flex-col items-center pt-10 px-5 pb-10">
       <div className="w-full max-w-[400px] flex flex-col items-center">
@@ -99,7 +121,9 @@ export default function VerifyRegist() {
             <div className="text-center mb-4">
               <button
                 type="button"
-                className="text-black font-bold text-[15px] hover:underline"
+                onClick={handleResendOTP}
+                disabled={isLoading}
+                className="text-black font-bold text-[15px] hover:underline disabled:opacity-50"
               >
                 Kirim Ulang OTP
               </button>

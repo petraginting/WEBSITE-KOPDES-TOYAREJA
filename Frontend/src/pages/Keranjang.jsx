@@ -2,18 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/axios";
 import BottomNav from "../components/BottomNav";
+import PaymentModal from "../components/PaymentModal";
 
 export default function Keranjang() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  // READ: Ambil isi keranjang
   const fetchCart = async () => {
     try {
-      // UNTUK NANTI: const response = await api.get('/keranjang');
-      // setCartItems(response.data.items);
-
       const dummyData = [
         {
           id: 1,
@@ -46,17 +44,13 @@ export default function Keranjang() {
       maximumFractionDigits: 0,
     }).format(angka);
 
-  // UPDATE: Ubah Jumlah Barang (Qty)
   const updateQty = async (cartId, newQty) => {
     if (newQty < 1) return removeItem(cartId);
-
-    // Optimistic UI Update
     const updatedCart = cartItems.map((item) =>
       item.cart_id === cartId ? { ...item, qty: newQty } : item,
     );
     setCartItems(updatedCart);
     calculateTotal(updatedCart);
-
     try {
       // UNTUK NANTI: await api.put(`/keranjang/${cartId}`, { qty: newQty });
     } catch (error) {
@@ -64,12 +58,10 @@ export default function Keranjang() {
     }
   };
 
-  // DELETE: Hapus dari keranjang
   const removeItem = async (cartId) => {
     const updatedCart = cartItems.filter((item) => item.cart_id !== cartId);
     setCartItems(updatedCart);
     calculateTotal(updatedCart);
-
     try {
       // UNTUK NANTI: await api.delete(`/keranjang/${cartId}`);
     } catch (error) {
@@ -77,23 +69,15 @@ export default function Keranjang() {
     }
   };
 
-  // CREATE: Buat Pesanan (Checkout)
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (cartItems.length === 0) return alert("Keranjang kosong!");
-    try {
-      // UNTUK NANTI: await api.post('/checkout', { items: cartItems, total: totalPrice });
-      alert("Pesanan berhasil dibuat!");
-      navigate("/riwayat");
-    } catch (error) {
-      alert("Checkout sukses (Simulasi)");
-      navigate("/riwayat");
-    }
+    setShowPaymentModal(true);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center">
-      <div className="w-full max-w-[450px] bg-white min-h-screen flex flex-col relative pb-24">
-        {/* Header */}
+      <div className="w-full max-w-[450px] bg-white min-h-screen flex flex-col relative">
+        {/* Header — sticky di atas */}
         <div className="sticky top-0 bg-white z-10 px-5 py-4 flex items-center gap-4 border-b border-gray-100">
           <button
             onClick={() => navigate(-1)}
@@ -118,8 +102,8 @@ export default function Keranjang() {
           </h1>
         </div>
 
-        {/* Daftar Item */}
-        <div className="flex-1 p-5 overflow-y-auto">
+        {/* ✅ Daftar Item — scroll area, kasih padding bawah agar tidak tertutup struk */}
+        <div className="flex-1 overflow-y-auto p-5 pb-[220px]">
           {cartItems.length === 0 ? (
             <div className="text-center py-10 text-gray-500">
               Keranjang Anda masih kosong.
@@ -130,11 +114,9 @@ export default function Keranjang() {
                 key={item.cart_id}
                 className="relative flex items-center gap-4 p-4 mb-4 bg-white border border-gray-100 rounded-[20px] shadow-[0_2px_15px_rgba(0,0,0,0.03)]"
               >
-                {/* Gambar Placeholder */}
                 <div className="w-[72px] h-[72px] bg-[#eef2ff] rounded-[14px] flex items-center justify-center text-[#2563eb] font-bold text-[12px]">
                   Egg
                 </div>
-
                 <div className="flex-1">
                   <h3 className="font-bold text-[14px] text-gray-900 leading-tight pr-6">
                     {item.nama}
@@ -142,7 +124,6 @@ export default function Keranjang() {
                   <p className="text-[#2563eb] font-bold text-[14px] mt-1 mb-2">
                     {formatRupiah(item.harga)}
                   </p>
-
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => updateQty(item.cart_id, item.qty - 1)}
@@ -159,8 +140,6 @@ export default function Keranjang() {
                     </button>
                   </div>
                 </div>
-
-                {/* Tombol Hapus / Tempat Sampah */}
                 <button
                   onClick={() => removeItem(item.cart_id)}
                   className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition-colors"
@@ -182,10 +161,10 @@ export default function Keranjang() {
           )}
         </div>
 
-        {/* STRUK BELANJA (Hanya muncul jika ada barang) */}
+        {/* ✅ STRUK BELANJA — fixed di bawah, di atas BottomNav */}
         {cartItems.length > 0 && (
-          <div className="p-5 pt-0">
-            <div className="bg-[#f8fafc] rounded-[24px] p-5 border border-gray-100">
+          <div className="fixed bottom-[64px] left-1/2 -translate-x-1/2 w-full max-w-[450px] px-5 pb-3 bg-white border-t border-gray-100 z-10">
+            <div className="bg-[#f8fafc] rounded-[24px] p-5 border border-gray-100 mt-3">
               <h3 className="font-bold text-[16px] text-gray-900 mb-4">
                 Struk Belanja
               </h3>
@@ -209,26 +188,30 @@ export default function Keranjang() {
 
               <hr className="border-gray-200 mb-4" />
 
-              {/* Total Akhir */}
-              <div className="flex justify-between items-center mb-6">
-                <span className="font-bold text-[16px] text-gray-900">
-                  Total
-                </span>
-                <span className="font-bold text-[18px] text-[#2563eb]">
-                  {formatRupiah(totalPrice)}
-                </span>
+              {/* Total + Tombol Checkout dalam 1 baris */}
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-gray-500 text-[12px]">Total</p>
+                  <p className="font-bold text-[18px] text-[#2563eb]">
+                    {formatRupiah(totalPrice)}
+                  </p>
+                </div>
+                <button
+                  onClick={handleCheckout}
+                  className="bg-[#2563eb] hover:bg-blue-700 text-white font-bold text-[15px] px-6 py-3 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-all"
+                >
+                  Checkout
+                </button>
               </div>
-
-              {/* Tombol Checkout */}
-              <button
-                onClick={handleCheckout}
-                className="w-full bg-[#2563eb] hover:bg-blue-700 text-white font-bold text-[16px] py-4 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-all"
-              >
-                Checkout
-              </button>
             </div>
           </div>
         )}
+
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          totalPrice={totalPrice}
+        />
 
         <BottomNav />
       </div>
