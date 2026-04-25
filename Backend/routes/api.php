@@ -1,5 +1,6 @@
  <?php
 
+use App\Http\Controllers\AnggotaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -8,11 +9,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SimpananController;
 use App\Http\Controllers\PesananController;
 use App\Http\Controllers\NotifikasiController;
-use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\KeranjangController;
-use App\Http\Controllers\DetailPesananController;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\AnggotaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\OtpController as AuthOtpController;
 use App\Http\Controllers\Auth\User\RegisterController;
@@ -27,22 +24,31 @@ Route::get('/user', function (Request $request) {
 // Product
 Route::apiResource('products', ProductController::class)->middleware('auth:sanctum');
 
+// Admin
+Route::prefix('admin')->group(function () {
+
+    Route::get('/anggota', [AnggotaController::class, 'semuaAnggota'])->middleware('auth:sanctum');
+    Route::put('/anggota/update/{anggota}', [AnggotaController::class, 'updateDataAnggota'])->middleware('auth:sanctum');
+
+    Route::get('/pesanan', [PesananController::class, 'semuaPesananUser'])->middleware('auth:sanctum');
+    Route::put('/pesanan/update-status/{pesanan}', [PesananController::class, 'updateStatus'])->middleware('auth:sanctum');
+
+    // Notifikasi
+    Route::prefix('notifikasi')->group(function () {
+        Route::get('/', [NotifikasiController::class, 'index'])->middleware('auth:sanctum');
+        Route::post('/add', [NotifikasiController::class, 'store'])->middleware('auth:sanctum');
+        Route::put('/update/{notifikasi}', [NotifikasiController::class, 'update'])->middleware('auth:sanctum');
+        Route::delete('/delete/{notifikasi}', [NotifikasiController::class, 'destroy'])->middleware('auth:sanctum');
+    });
+});
+
 // Pesanan & detail (optional public kalau mau)
 Route::prefix('pesanan')->group(function () {
-    Route::get('/', [PesananController::class, 'index'])->middleware('auth:sanctum');
     Route::post('/checkout', [PesananController::class, 'checkout'])->middleware('auth:sanctum');
     Route::get('/{pesanan}', [PesananController::class, 'show'])->middleware('auth:sanctum');
     Route::delete('/{pesanan}', [PesananController::class, 'destroy'])->middleware('auth:sanctum');
-    Route::put('/{pesanan}/update-status', [PesananController::class, 'updateStatus'])->middleware('auth:sanctum');
 });
 
-// Notifikasi
-Route::prefix('notifikasi')->group(function () {
-    Route::get('/', [NotifikasiController::class, 'index'])->middleware('auth:sanctum');
-    Route::post('/add', [NotifikasiController::class, 'store'])->middleware('auth:sanctum');
-    Route::put('/update/{notifikasi}', [NotifikasiController::class, 'update'])->middleware('auth:sanctum');
-    Route::delete('/delete/{notifikasi}', [NotifikasiController::class, 'destroy'])->middleware('auth:sanctum');
-});
 
 // Keranjang
 Route::prefix('keranjang')->group(function () {
@@ -53,10 +59,10 @@ Route::prefix('keranjang')->group(function () {
 });
 
 // Simpanan
-Route::apiResource('simpanan', SimpananController::class);
+Route::post('/simpanan/add', [SimpananController::class, 'store'])->middleware('auth:sanctum');
+Route::get('/simpanan', [SimpananController::class, 'index'])->middleware('auth:sanctum');
 
-// Auth (register)
-Route::apiResource('anggota', AnggotaController::class);
+
 
 
 Route::prefix('auth')->group(function () {

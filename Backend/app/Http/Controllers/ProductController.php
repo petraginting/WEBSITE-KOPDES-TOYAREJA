@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
@@ -13,7 +14,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-         $products = Product::latest()->get();
+        $products = Product::latest()->get();
         return response()->json([
             'success' => true,
             'message' => 'list of products',
@@ -34,6 +35,13 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak, Anda bukan admin',
+            ], 403);
+        }
+        
         $validator = Validator::make($request->all(), [
             'nama_produk' => 'required|string|max:255', 
             'unit' => 'required|string|max:50',
@@ -101,6 +109,13 @@ class ProductController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak, Anda bukan admin',
+            ], 403);
+        }
+        
         $product = Product::find($id);
         if(!$product) { 
             return response()->json([
@@ -142,6 +157,13 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak, Anda bukan admin',
+            ], 403);
+        }
+
         $product = Product::find($product); 
 
         if (!$product) { 

@@ -36,8 +36,8 @@ class RegisterController extends Controller
         $request->validate([
             'nama_lengkap' => 'required|string',
             'no_hp' => 'required|unique:users,no_hp',
-            'nik' => 'required|unique:anggotas,nik|digits:16',
             'password' => 'required|min:8',
+            'jenis_kelamin' => 'required|in:laki-laki,perempuan'
         ]);
 
         $no_hp = $this->formatNomorHp($request->no_hp);
@@ -116,7 +116,7 @@ class RegisterController extends Controller
         DB::transaction(function () use ($userData) {
             // 1. Simpan ke tabel Users
             $user = User::create([
-                'username' => $userData['nik'], // Gunakan NIK sebagai username
+                'username' => $userData['no_hp'], // Gunakan no_hp sebagai username
                 'no_hp' => $userData['no_hp'],
                 'password' => Hash::make($userData['password']),
             ]);
@@ -124,7 +124,7 @@ class RegisterController extends Controller
             // 2. Simpan ke tabel Anggota
             $user->anggota()->create([
                 'nama_lengkap' => $userData['nama_lengkap'],
-                'nik' => $userData['nik'],
+                'jenis_kelamin' => $userData['jenis_kelamin'],
                 'alamat' => $userData['alamat'] ?? '', // Jika alamat tidak wajib, bisa diisi dengan string kosong
             ]);
         });

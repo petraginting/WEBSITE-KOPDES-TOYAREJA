@@ -16,9 +16,16 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
 
             $table->string('nama_lengkap');
-            $table->string('nik', 16)->unique();
+            $table->string('no_registrasi')->nullable()->unique();
+            $table->string('nik', 16)->nullable()->unique();
+            $table->enum('jenis_kelamin', ['laki-laki', 'perempuan'])->nullable();
+            $table->timestamp('tanggal_lahir')->nullable();
             $table->text('alamat')->nullable();
-            $table->enum('status_keanggotaan', ['aktif', 'tidak_aktif'])->default('aktif');
+            $table->string('pekerjaan')->nullable();
+            $table->timestamp('tanggal_bergabung')->nullable();
+            $table->enum('status_keanggotaan', ['aktif', 'tidak_aktif'])->nullable();
+
+            $table->bigInteger('total_simpanan')->default(0);
             $table->integer('poin')->default(0);
 
             $table->timestamp('email_verified_at')->nullable();

@@ -13,9 +13,17 @@ return new class extends Migration
     {
         Schema::create('simpanans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('anggota_id')->constrained();
-            $table->enum('jenis_simpanan', ['pokok', 'wajib', 'sukarela']);
-            $table->integer('jumlah');
+            $table->foreignId('user_id')
+                  ->nullable()
+                  ->constrained('users')
+                  ->onDelete('set null');
+
+            
+            $table->string('nama_lengkap');
+            $table->integer('jumlah_pokok');
+            $table->integer('jumlah_wajib');
+            $table->integer('jumlah_sukarela');
+            $table->integer('total');
             $table->timestamps();
         });
     }
