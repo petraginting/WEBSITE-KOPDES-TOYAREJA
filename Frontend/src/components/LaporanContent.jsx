@@ -1,9 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Data_Transaksi, Data_Simpanan } from "../dataset/data.laporan";
+import { lihatSemuaSimpananAnggota } from "../api/auth/simpanan";
 
 export default function LaporanContent() {
   const [selectedMonth, setSelectedMonth] = useState("03");
   const [selectedYear, setSelectedYear] = useState("2026");
+  const [simpananData, setSimpananData] = useState([]);
+
+
+  const fetchData = async () => {
+    try {
+      const data = await lihatSemuaSimpananAnggota();
+      setSimpananData(data);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const formatIDR = (val) =>
     new Intl.NumberFormat("id-ID", {
@@ -23,36 +39,44 @@ export default function LaporanContent() {
   };
 
   const filteredTransaksi = filterByDate(Data_Transaksi);
-  const filteredSimpanan = filterByDate(Data_Simpanan);
+
+  const filteredSimpanan = simpananData.filter((item) => {
+    if (!item.created_at) return false; // Lewati jika tidak ada tanggal
+    const date = new Date(item.created_at);
+    const itemMonth = (date.getMonth() + 1).toString().padStart(2, "0");
+    const itemYear = date.getFullYear().toString();
+    return itemMonth === selectedMonth && itemYear === selectedYear;
+  });
 
   //  FUNGSI EXPORT EXCEL (CSV)
-  const exportToCSV = (data, fileName, headers) => {
-    if (data.length === 0) {
+  const exportToCSV = (mappedData, fileName, headers) => {
+    if (mappedData.length === 0) {
       alert("Tidak ada data untuk dieksport pada periode ini.");
       return;
     }
 
-    // Gabung Header dan Baris Data
     const csvRows = [
-      headers.join(","), // Baris pertama: Header
-      ...data.map((row) => Object.values(row).join(",")), // Baris berikutnya: Data
+      headers.join(","), // Header
+      ...mappedData.map((row) => row.join(",")), // Data yang sudah berbentuk Array
     ];
 
     const csvContent = csvRows.join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-
-    // Trigger Download Browser
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `${fileName}_${selectedMonth}_${selectedYear}.csv`,
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
+    link.setAttribute("download", `${fileName}_${selectedMonth}_${selectedYear}.csv`);
     link.click();
-    document.body.removeChild(link);
+  };
+
+  const handleExportSimpanan = () => {
+    const headers = ["No. Registrasi", "Nama Anggota", "Simpanan Pokok", "Simpanan Wajib", "Simpanan Sukarela", "Total Simpanan", "Tanggal"];
+    const mappedData = filteredSimpanan.map((item) => [
+      item.user?.anggota?.no_registrasi || "-",
+      `"${item.user?.anggota?.nama_lengkap || "Anonim"}"`, item.jumlah_pokok, item.jumlah_wajib, item.jumlah_sukarela, item.total,
+      new Date(item.created_at).toLocaleDateString("id-ID"),
+    ]);
+    exportToCSV(mappedData, "Laporan_Simpanan", headers);
   };
 
   return (
@@ -68,6 +92,8 @@ export default function LaporanContent() {
             <option value="01">Januari</option>
             <option value="02">Februari</option>
             <option value="03">Maret</option>
+            <option value="04">April</option>
+            <option value="05">Mei</option>
           </select>
 
           <select
@@ -90,14 +116,12 @@ export default function LaporanContent() {
 
       {/* Ringkasan Laporan */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <ReportCard
-          label="Penjualan"
-          value={formatIDR(filteredTransaksi.reduce((a, b) => a + b.total, 0))}
-        />
+        <ReportCard label="Penjualan" value={formatIDR(filteredTransaksi.reduce((a, b) => a + b.total, 0))} />
         <ReportCard label="Transaksi" value={filteredTransaksi.length} />
         <ReportCard
           label="Simpanan"
-          value={formatIDR(filteredSimpanan.reduce((a, b) => a + b.jumlah, 0))}
+          // Di backend fieldnya adalah 'total' (hasil jumlah_pokok + wajib + sukarela)
+          value={formatIDR(filteredSimpanan.reduce((a, b) => a + (Number(b.total) || 0), 0))}
         />
       </div>
 
@@ -158,15 +182,7 @@ export default function LaporanContent() {
             💰 Laporan Simpanan Anggota
           </h3>
           <button
-            onClick={() =>
-              exportToCSV(filteredSimpanan, "Laporan_Simpanan", [
-                "ID",
-                "Nama",
-                "Jenis",
-                "Jumlah",
-                "Tanggal",
-              ])
-            }
+            onClick={handleExportSimpanan}
             className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-all print:hidden"
           >
             Excel (CSV)
@@ -183,16 +199,19 @@ export default function LaporanContent() {
           </thead>
           <tbody>
             {filteredSimpanan.map((item) => (
-              <tr
-                key={item.id}
-                className="border-b border-gray-100 hover:bg-gray-50"
-              >
-                <td className="px-4 py-3 font-bold">{item.id}</td>
-                <td className="px-4 py-3">{item.nama}</td>
-                <td className="px-4 py-3 font-semibold">
-                  {formatIDR(item.jumlah)}
+              <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="px-4 py-3 font-bold">
+                  {item.user?.anggota?.no_registrasi || "-"}
                 </td>
-                <td className="px-4 py-3 text-light">{item.tanggal}</td>
+                <td className="px-4 py-3">
+                  {item.user?.anggota?.nama_lengkap || "Anonim"}
+                </td>
+                <td className="px-4 py-3 font-semibold">
+                  {formatIDR(item.total)}
+                </td>
+                <td className="px-4 py-3 text-light">
+                  {new Date(item.created_at).toLocaleDateString("id-ID")}
+                </td>
               </tr>
             ))}
           </tbody>

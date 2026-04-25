@@ -1,18 +1,30 @@
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from 'react-router-dom'
 
-export default function Login({ onLogin }) {
+export default function Login() {
+
+  const { login } = useAuth()
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   // mengubah parameter agar menerima event 'e' dari form submit
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault(); // agar halaman tidak refresh saat tombol diklik/dienter
 
-    // Logika dummy sementara:
-    if (username === "admin" && password === "admin123") {
-      onLogin();
-    } else {
-      alert("Username atau password salah!");
+    // Validasi input sebelum memanggil API
+    if (username.trim() === "" || password.trim() === "") {
+      alert("No hp dan password tidak boleh kosong");
+      return;
+    }
+
+    try {
+      await login(username, password)
+      navigate('/')
+    } catch (error) {
+      alert(error.message);
     }
   };
 
@@ -50,7 +62,7 @@ export default function Login({ onLogin }) {
         <form onSubmit={handleLogin}>
           <div className="mb-5">
             <label className="block text-black text-[13px] font-medium mb-2 tracking-wide">
-              Username
+              Nomor Hp
             </label>
             <input
               type="text"

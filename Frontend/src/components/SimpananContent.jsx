@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "./Modal";
+import { tambahSimpanan, lihatSemuaSimpananAnggota } from "../api/auth/simpanan";
 
 // --- Fungsi Penolong ---
 
@@ -20,75 +21,65 @@ const formatInputRupiah = (angka) => {
 };
 
 export default function SimpananContent() {
-  // --- STATE UTAMA ---
-  const [simpananData, setSimpananData] = useState([
-    {
-      id: 1,
-      nomorAnggota: "#A001",
-      namaLengkap: "Budi Santoso",
-      simpananPokok: 1000000,
-      simpananWajib: 600000,
-      simpananSukarela: 500000,
-    },
-    {
-      id: 2,
-      nomorAnggota: "#A002",
-      namaLengkap: "Siti Rahayu",
-      simpananPokok: 1000000,
-      simpananWajib: 500000,
-      simpananSukarela: 250000,
-    },
-    {
-      id: 3,
-      nomorAnggota: "#A003",
-      namaLengkap: "Ahmad Fauzi",
-      simpananPokok: 1000000,
-      simpananWajib: 700000,
-      simpananSukarela: 1000000,
-    },
-  ]);
-
-  // --- STATE UI & FORM ---
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [simpananData, setSimpananData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isEditing, setIsEditing] = useState(false)
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    no_registrasi: "",
+    nama_lengkap: "",
+    jumlah_pokok: 0,
+    jumlah_wajib: 0,
+    jumlah_sukarela: 0,
+  });
 
-  const initialFormState = {
-    nomorAnggota: "",
-    namaLengkap: "",
-    simpananPokok: 0,
-    simpananWajib: 0,
-    simpananSukarela: 0,
+  // --- AMBIL DATA DARI BACKEND ---
+  const fetchData = async () => {
+    try {
+      const data = await lihatSemuaSimpananAnggota();
+      setSimpananData(data);
+    } catch (err) {
+      alert(err.message);
+    }
   };
-  const [formData, setFormData] = useState(initialFormState);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // --- HANDLER SIMPAN ---
+  const handleSave = async () => {
+    try {
+      const response = await tambahSimpanan(formData);
+      if (response.success) {
+        alert("Simpanan Berhasil!");
+        fetchData(); // Refresh data tabel
+        closeFormModal();
+      }
+    } catch (err) {
+      alert(err.message); // Menampilkan pesan error dari backend (misal: "Akses ditolak")
+    }
+  };
 
   // --- LOGIKA PERHITUNGAN & FILTER ---
-  const totalPokok = simpananData.reduce(
-    (sum, item) => sum + item.simpananPokok,
-    0,
-  );
-  const totalWajib = simpananData.reduce(
-    (sum, item) => sum + item.simpananWajib,
-    0,
-  );
-  const totalSukarela = simpananData.reduce(
-    (sum, item) => sum + item.simpananSukarela,
-    0,
-  );
+  // Perbaikan hitung total (sesuaikan dengan nama field di DB)
+  const totalPokok = simpananData.reduce((sum, item) => sum + (item.jumlah_pokok || 0), 0);
+  const totalWajib = simpananData.reduce((sum, item) => sum + (item.jumlah_wajib || 0), 0);
+  const totalSukarela = simpananData.reduce((sum, item) => sum + (item.jumlah_sukarela || 0), 0);
+
 
   const filteredData = simpananData.filter(
     (item) =>
-      item.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.nomorAnggota.toLowerCase().includes(searchTerm.toLowerCase()),
+      item.user?.anggota?.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.user?.anggota?.no_registrasi.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // --- FUNGSI HANDLER ---
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
-    // Jika input adalah bagian simpanan (uang)
-    if (name.startsWith("simpanan")) {
-      const rawValue = value.replace(/[^0-9]/g, ""); // Hanya ambil angka murni
+    // Jika input jumlah uang, hilangkan titik formatan dan ubah ke angka
+    if (name.startsWith("jumlah_")) {
+      const rawValue = value.replace(/[^0-9]/g, "");
       setFormData({ ...formData, [name]: Number(rawValue) || 0 });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -96,40 +87,22 @@ export default function SimpananContent() {
   };
 
   const openAddModal = () => {
-    setIsEditing(false);
-    setFormData(initialFormState);
+    setIsEditing(false); // Set false untuk tambah data
+    setFormData({ no_registrasi: "", jumlah_pokok: 0, jumlah_wajib: 0, jumlah_sukarela: 0 });
     setIsFormModalOpen(true);
   };
 
   const openEditModal = (data) => {
-    setIsEditing(true);
+    setIsEditing(true); // Set true untuk edit
     setFormData(data);
     setIsFormModalOpen(true);
   };
 
   const closeFormModal = () => {
     setIsFormModalOpen(false);
-    setFormData(initialFormState);
   };
 
-  const handleSave = () => {
-    if (isEditing) {
-      setSimpananData(
-        simpananData.map((s) => (s.id === formData.id ? { ...formData } : s)),
-      );
-    } else {
-      const newData = {
-        ...formData,
-        id: Date.now(),
-        // Memberikan nomor default jika kosong
-        nomorAnggota:
-          formData.nomorAnggota ||
-          `#A${String(simpananData.length + 1).padStart(3, "0")}`,
-      };
-      setSimpananData([...simpananData, newData]);
-    }
-    closeFormModal();
-  };
+
 
   const handleDelete = (id) => {
     if (
@@ -229,30 +202,30 @@ export default function SimpananContent() {
               {filteredData.length > 0 ? (
                 filteredData.map((item) => {
                   const totalRow =
-                    item.simpananPokok +
-                    item.simpananWajib +
-                    item.simpananSukarela;
+                    item.jumlah_pokok +
+                    item.jumlah_wajib +
+                    item.jumlah_sukarela;
                   return (
                     <tr
                       key={item.id}
                       className="hover:bg-blue-50 border-b border-blue-50 last:border-none transition-colors"
                     >
                       <td className="px-4 py-3 text-dark font-medium">
-                        {item.nomorAnggota}
+                        {item.user?.anggota?.no_registrasi}
                       </td>
                       <td className="px-4 py-3 text-dark">
-                        {item.namaLengkap}
+                        {item.user?.anggota?.nama_lengkap}
                       </td>
                       <td className="px-4 py-3 text-dark">
-                        {formatRupiah(item.simpananPokok)}
+                        {formatRupiah(item.jumlah_pokok)}
                       </td>
                       <td className="px-4 py-3 text-dark">
-                        {formatRupiah(item.simpananWajib)}
+                        {formatRupiah(item.jumlah_wajib)}
                       </td>
                       <td className="px-4 py-3 text-dark">
-                        {formatRupiah(item.simpananSukarela)}
+                        {formatRupiah(item.jumlah_sukarela)}
                       </td>
-                      <td className="px-4 py-3 text-dark font-bold text-blue-700">
+                      <td className="px-4 py-3 font-bold text-blue-700">
                         {formatRupiah(totalRow)}
                       </td>
                       <td className="px-4 py-3 flex gap-2">
@@ -309,14 +282,14 @@ export default function SimpananContent() {
         <div className="grid grid-cols-2 gap-[16px] mb-[16px]">
           <div>
             <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              No. Anggota
+              No. Registrasi
             </label>
             <input
-              name="nomorAnggota"
-              value={formData.nomorAnggota}
+              name="no_registrasi"
+              value={formData.no_registrasi}
               onChange={handleInputChange}
               type="text"
-              placeholder="#A001"
+              placeholder="01"
               className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
             />
           </div>
@@ -325,8 +298,8 @@ export default function SimpananContent() {
               Nama Lengkap
             </label>
             <input
-              name="namaLengkap"
-              value={formData.namaLengkap}
+              name="nama_lengkap"
+              value={formData.nama_lengkap}
               onChange={handleInputChange}
               type="text"
               placeholder="Budi Santoso"
@@ -340,8 +313,8 @@ export default function SimpananContent() {
                 Simpanan Pokok (Rp)
               </label>
               <input
-                name="simpananPokok"
-                value={formatInputRupiah(formData.simpananPokok)}
+                name="jumlah_pokok"
+                value={formatInputRupiah(formData.jumlah_pokok)}
                 onChange={handleInputChange}
                 type="text"
                 placeholder="0"
@@ -353,8 +326,8 @@ export default function SimpananContent() {
                 Simpanan Wajib (Rp)
               </label>
               <input
-                name="simpananWajib"
-                value={formatInputRupiah(formData.simpananWajib)}
+                name="jumlah_wajib"
+                value={formatInputRupiah(formData.jumlah_wajib)}
                 onChange={handleInputChange}
                 type="text"
                 placeholder="0"
@@ -366,8 +339,8 @@ export default function SimpananContent() {
                 Simpanan Sukarela (Rp)
               </label>
               <input
-                name="simpananSukarela"
-                value={formatInputRupiah(formData.simpananSukarela)}
+                name="jumlah_sukarela"
+                value={formatInputRupiah(formData.jumlah_sukarela)}
                 onChange={handleInputChange}
                 type="text"
                 placeholder="0"
