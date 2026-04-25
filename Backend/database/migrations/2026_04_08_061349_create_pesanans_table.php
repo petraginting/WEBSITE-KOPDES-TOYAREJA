@@ -13,7 +13,11 @@ return new class extends Migration
     {
         Schema::create('pesanans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
+            $table->foreignId('user_id')
+                  ->nullable()
+                  ->constrained('users')
+                  ->onDelete('set null');
+                  
             $table->integer('total_harga');
             $table->string('metode_pembayaran');
             $table->string('bukti_pembayaran')->nullable();

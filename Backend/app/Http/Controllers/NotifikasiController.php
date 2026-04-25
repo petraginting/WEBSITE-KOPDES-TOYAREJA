@@ -15,6 +15,13 @@ class NotifikasiController extends Controller
      */
     public function index()
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak, Anda bukan admin',
+            ], 403);
+        }
+        
         Notifikasi::where('status', 'aktif')->where('tanggal_berlaku', '<', now())->update(['status' => 'expired']);
 
         $data = Notifikasi::latest()->get();

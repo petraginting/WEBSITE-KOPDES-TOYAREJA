@@ -7,13 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 class Simpanan extends Model
 {
     protected $fillable = [
-        'jenis_simpanan',
-        'jumlah'
+        'user_id',
+        'nama_anggota',
+        'jumlah_pokok',
+        'jumlah_wajib',
+        'jumlah_sukarela',
+        'total',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
 }

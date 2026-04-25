@@ -2,26 +2,40 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Anggota;
 use App\Models\Detail_pesanan;
 use App\Models\Keranjang;
 use App\Models\Pesanan;
 use App\Models\Product;
-use Illuminate\Auth\Events\Failed;
-use Illuminate\Database\Query\Grammars\PostgresGrammar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 class PesananController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function semuaPesananUser()
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak, Anda bukan admin',
+            ], 403);
+        }
+
         $data = Pesanan::latest()->get();
+
+        return response()->json([
+            'success'=>true,
+            'message'=> 'List Pesanan',
+            'data' => $data
+        ], 200);
+    }
+
+    public function pesananUser()
+    {
+        $data = Pesanan::where('user_id', Auth::user()->id)->get();
 
         return response()->json([
             'success'=>true,
@@ -86,18 +100,19 @@ class PesananController extends Controller
                 $path = $file->storeAs('bukti_pembayaran', $filename, 'public');
             }
 
-            // 4. Hitung Total Harga
+            // Hitung Total Harga
             $totalHarga = $items->sum(function($item) {
                 return $item->product->harga * $item->kuantitas;
             });
 
-            $anggota = Anggota::find('user_id', $user->id);
-
+            
+            // Tambah poin setiap kelipatan Rp50.000
             if ($totalHarga >= 50000) {
-                $anggota->increment('poin', $totalHarga/50000);
+                $tambahPoin = floor($totalHarga / 50000);
+                $user->anggota()->increment('poin', $tambahPoin);
             }
 
-            // 5. Simpan Pesanan (Header)
+            // Simpan Pesanan (Header)
             $pesanan = Pesanan::create([
                 'user_id'           => $user->id,
                 'total_harga'       => $totalHarga,
@@ -117,7 +132,7 @@ class PesananController extends Controller
                     'subtotal'    => $item->product->harga * $item->kuantitas
                 ]);
 
-                // 7. Update Stok Produk
+                // Update Stok Produk
                 $product = Product::find($item->product_id);
                 if ($product->stok < $item->kuantitas) {
                     // Jika stok tidak mencukupi, rollback transaksi dan kembalikan error
@@ -125,7 +140,7 @@ class PesananController extends Controller
                 }
                 $product->decrement('stok', $item->kuantitas);
 
-                // 8. Hapus Item dari Keranjang
+                // Hapus Item dari Keranjang
                 $item->delete();
             }
 

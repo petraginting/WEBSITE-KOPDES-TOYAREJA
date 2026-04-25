@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Anggota;
 use App\Models\Simpanan;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\Mime\Message;
 
@@ -16,7 +18,7 @@ class SimpananController extends Controller
      */
     public function index()
     {
-        $data = Simpanan::latest()->get();
+        $data = Simpanan::with('user.anggota')->latest()->get();
 
         return response()->json([
             'success' => true,
@@ -38,37 +40,73 @@ class SimpananController extends Controller
      */
     public function store(Request $request)
     {
+        // $user = Auth::user();
+
+        // if (!$user->role === 'admin') {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'Akses ditolak'
+        //     ], 403);
+        // }
+
         $request->validate([
-            'jenis_simpanan' => 'required|in:pokok,wajib,sukarela',
-            'jumlah' => 'required|interger|min:1'
+            'no_registrasi' => 'required|string|exists:anggotas,no_registrasi',
+            'nama_lengkap' => 'required|string',
+            'jumlah_pokok' => 'required|integer|min:0',
+            'jumlah_wajib' => 'required|integer|min:0',
+            'jumlah_sukarela' => 'required|integer|min:0'
         ]);
 
-        if ($request->jumlah !== 50000 && $request->jenis_simpanan === 'pokok') {
+        if ($request->jumlah_pokok != 50000 && $request->jumlah_pokok != 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'Simpanan pokok minimal dan maksimal Rp50.000'
-            ]);
+            ], 422);
         } 
         
-        if ($request->jumlah !== 5000 && $request->jenis_simpanan === 'wajib') {
+        if ($request->jumlah_wajib != 5000 && $request->jumlah_wajib != 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'Simpanan wajib minimal dan maksimal Rp5.000'
-            ]);
+            ], 422);
         } 
 
-        if ($request->jumlah < 5000 && $request->jenis_simpanan === 'sukarela') {
+        if ($request->jumlah_sukarela < 5000 && $request->jumlah_sukarela != 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'Simpanan sukarela minimal Rp5.000'
-            ]);
+            ], 422);
         }
 
-        $user = Auth::user();
+        $totalSimpanan = $request->jumlah_pokok + $request->jumlah_wajib + $request->jumlah_sukarela;
 
-        
+        $anggota = Anggota::where('no_registrasi', $request->no_registrasi)->first();
 
+        if (!$anggota) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anggota tidak terdaftar.'
+            ], 404);
+        } 
 
+        return DB::transaction(function () use ($request, $totalSimpanan, $anggota) {
+            $simpanan = Simpanan::create([
+                'user_id' => $anggota->user_id,
+                'nama_lengkap' => $request->nama_lengkap,
+                'jumlah_pokok' => $request->jumlah_pokok,
+                'jumlah_wajib' => $request->jumlah_wajib,
+                'jumlah_sukarela' => $request->jumlah_sukarela,
+                'total' => $totalSimpanan
+            ]);
+
+            $anggota->increment('total_simpanan', $totalSimpanan);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Simpanan anggota berhasil dibuat.",
+                'data' => $simpanan
+            ], 201);
+        });
 
     }
 
@@ -96,22 +134,33 @@ class SimpananController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Simpanan $simpanan)
+    public function updateStatus(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'jenis_simpanan' => 'sometimes|string|max:100',
-            'jumlah_transaksi' => 'sometimes|string|min:0'
-        ]);
+        $user = Auth::user();
 
-        if ($validator->fails()){ 
+        if (!$user->role === 'admin') {
             return response()->json([
-                'success' => false, 
-                'message' => 'Validation Error', 
-                'errors' => $validator->errors()
-            ], 422);
+                'success' => false,
+                'message' => 'Akses ditolak'
+            ], 403);
         }
 
-        $simpanan->update($request->all());
+        $request->validate([
+            'status' => 'sometimes|in:pending,disetujui,ditolsk',
+        ]);
+
+        if ($request->status !== 'pending') {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Data sudah diproses.'
+            ], 400);
+        }
+
+        $simpanan = Simpanan::findOrFail($id);
+
+        $simpanan->update([
+            'status' => $request->status
+        ]);
 
         return response()->json([
             'success' => true,

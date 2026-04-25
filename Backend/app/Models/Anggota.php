@@ -19,10 +19,21 @@ class Anggota extends Authenticatable
     protected $fillable = [
         "user_id",
         'nama_lengkap',
+        "no_registrasi",
         'nik',
+        'jenis_kelamin',
+        'tanggal_lahir',
         'alamat',
+        'pekerjaan',
+        'tanggal_bergabung',
         'status_keanggotaan',
+        'total_simpanan',
         'poin'
+    ];
+
+    protected $casts = [
+        'tanggal_lahir' => 'datetime:Y-m-d',
+        'tanggal_bergabung' => 'datetime:Y-m-d'
     ];
 
     protected $table = 'anggotas';

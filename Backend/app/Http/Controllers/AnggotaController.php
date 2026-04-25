@@ -12,9 +12,13 @@ class AnggotaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function semuaAnggota()
     {
-        $data = Anggota::latest()->get();
+        $data = Anggota::with('user')
+                        ->whereHas('user', function($query) {
+                            $query->where('role', 'anggota');
+                        })
+                        ->get();
 
         return response()->json([
             'success' => true,
@@ -36,44 +40,29 @@ class AnggotaController extends Controller
      */
     public function store(Request $request)
     {
-         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
-            'email' => 'required|email|unique:anggotas,email',
-            'password' => 'required|string|min:6|confirmed'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation Error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-         $anggota = Anggota::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            // tetap hash walau ada cast
-            'password' => Hash::make($request->password)
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Anggota berhasil dibuat',
-            'data' => $anggota
-        ], 201);
 
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Anggota $anggota)
+   public function show(Anggota $anggota)
     {
+        // Cek apakah anggota ini memiliki role 'anggota' di tabel user
+        if ($anggota->user->role !== 'anggota') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data bukan merupakan anggota.'
+            ], 403);
+        }
+
+        // Load relasi user agar ikut tampil dalam response
+        $anggota->load('user');
+
         return response()->json([
             'success' => true,
-            'message' => 'detail anggota',
-            'data' => $anggota
+            'message' => 'Detail anggota ditemukan',
+            'data'    => $anggota
         ], 200);
     }
 
@@ -88,46 +77,45 @@ class AnggotaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Anggota $anggota)
+    public function updateDataAnggota(Request $request, Anggota $anggota)
     {
-         $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:100',
-            'email' => 'sometimes|email|unique:anggotas,email,' . $anggota->id,
-            'password' => 'nullable|string|min:6|confirmed'
+        $request->validate([
+            'nama_lengkap'       => 'sometimes|string|max:255',
+            'no_registrasi'      => 'sometimes|string|unique:anggotas,no_registrasi,' . $anggota->id,
+            'nik'                => 'sometimes|string|size:16|unique:anggotas,nik,' . $anggota->id,
+            'jenis_kelamin'      => 'sometimes|in:laki-laki,perempuan',
+            'tanggal_lahir'      => 'sometimes|date',
+            'alamat'             => 'sometimes|string',
+            'pekerjaan'          => 'sometimes|string',
+            'tanggal_bergabung'  => 'sometimes|date',
+            'status_keanggotaan' => 'sometimes|in:aktif,tidak_aktif',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation Error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-         $data = $request->only(['name', 'email']);
+        // Mengambil data yang hanya dikirim di request
+        $dataUpdate = $request->only([
+            'nama_lengkap', 'no_registrasi', 'nik', 'jenis_kelamin', 
+            'tanggal_lahir', 'alamat', 'pekerjaan', 'tanggal_bergabung', 
+            'status_keanggotaan'
+        ]);
 
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
-        }
-
-        $anggota->update($data);
+        // Proses simpan ke database
+        $anggota->update($dataUpdate);
 
         return response()->json([
             'success' => true,
-            'message' => 'Anggota berhasil diupdate',
-            'data' => $anggota
+            'message' => 'Data anggota berhasil diperbarui',
+            'data'    => $anggota->load('user')
         ], 200);
     }
+
+
+
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(Anggota $anggota)
     {
-        $anggota->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'anggota berhasil dihapus'
-        ], 200);
+    
     }
 }
