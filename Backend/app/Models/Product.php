@@ -22,4 +22,9 @@ class Product extends Model
     {
         return $this->hasMany(Keranjang::class);
     }
+
+    public function details()
+    {
+        return $this->hasMany(Detail_pesanan::class);
+    } 
 }

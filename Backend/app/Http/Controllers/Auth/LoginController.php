@@ -14,14 +14,13 @@ class LoginController extends Controller
     {
         $request->validate([
             'username' => 'required',
-            'password' => 'required',
-            'device_name' => 'required'
+            'password' => 'required'
         ]);
 
         $user = User::where('username', $request->username)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Nomor NIK atau password salah.'], 401);
+            return response()->json(['message' => 'Nomor hp atau password salah.'], 401);
         }
 
         // Jika login berhasil, buat token akses
@@ -32,6 +31,35 @@ class LoginController extends Controller
                 'user' => $user,
                 'token' => $user->createToken($request->device_name, ['*'], now()->addWeek())->plainTextToken
             ]
+        ]);
+    }
+
+    // Logout
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logout successful'
+        ]);
+    }
+
+    // Get User Profile
+    public function getUserProfile(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User tidak ditemukan'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User profile retrieved',
+            'data' => $user
         ]);
     }
 }

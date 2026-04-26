@@ -1,72 +1,101 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import { api } from "../api/api";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+    const navigate = useNavigate();
+
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem("token"));
     const [loading, setLoading] = useState(true);
 
-    // 1. Sinkronisasi Token & Axios Header
+    // 🔥 INIT APP (jalan sekali saja)
     useEffect(() => {
-        if (token) {
-            api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-            localStorage.setItem("token", token);
-            fetchUser();
-        } else {
-            delete api.defaults.headers.common["Authorization"];
-            localStorage.removeItem("token");
-            setUser(null);
-            setLoading(false);
-        }
-    }, [token]);
+        const initAuth = async () => {
+            const storedToken = localStorage.getItem("token");
 
-    // 2. Ambil Data User Profil (Gunakan info dari login atau endpoint /me)
-    const fetchUser = async () => {
-        try {
-            // Ganti endpoint ini sesuai backend Anda (misal: /auth/me atau /user)
-            const response = await api.get("/auth/user-profile");
-            setUser(response.data.data);
-        } catch (error) {
-            console.error("Gagal ambil profil:", error);
-            logout();
-        } finally {
-            setLoading(false);
-        }
-    };
+            if (!storedToken) {
+                setLoading(false);
+                return;
+            }
 
-    // 3. Fungsi Login
+            try {
+                // set header
+                api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+
+                // fetch user
+                const res = await api.get("/auth/user-profile");
+                const userData = res.data.data;
+
+                setUser(userData);
+
+            } catch (error) {
+                console.error("Token invalid:", error);
+                localStorage.removeItem("token");
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initAuth();
+    }, []);
+
+    // ✅ LOGIN
     const login = async (username, password) => {
         try {
-            const response = await api.post('/auth/login', {
-                username: username,
-                password: password,
+            const response = await api.post("/auth/login", {
+                username,
+                password,
                 device_name: "Web App"
             });
 
-            if (response.data.success) {
-                // Simpan token ke state (useEffect akan menangani localStorage & headers)
-                setToken(response.data.data.token);
-                setUser(response.data.data.user);
-                alert(response.data.message)
+            if (response.data.success && response.data.data) {
+                const { token, user: userData } = response.data.data;
+
+                // simpan token (persist)
+                localStorage.setItem("token", token);
+
+                // set header
+                api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+                // set user
+                setUser(userData);
+
+                // redirect
+                if (userData.role === "admin") {
+                    navigate("/admin");
+                } else {
+                    navigate("/");
+                }
+
                 return response.data;
             } else {
-                alert(response.data.message)
+                throw new Error(response.data.message || "Login gagal");
             }
+
         } catch (error) {
-            throw new Error(error.response?.data?.message || "Login Gagal");
+            throw new Error(error.response?.data?.message || "Login gagal");
         }
     };
 
-    // 4. Fungsi Logout
-    const logout = () => {
-        setToken(null);
+    // ✅ LOGOUT
+    const logout = async () => {
+        try {
+            await api.post("/auth/logout");
+        } catch (error) {
+            console.log("Logout server gagal:", error);
+        } finally {
+            localStorage.removeItem("token");
+            delete api.defaults.headers.common["Authorization"];
+            setUser(null);
+            navigate("/login");
+        }
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, loading }}>
-            {/* Jangan tampilkan app sebelum loading token selesai */}
+        <AuthContext.Provider value={{ user, login, logout, loading }}>
             {!loading && children}
         </AuthContext.Provider>
     );

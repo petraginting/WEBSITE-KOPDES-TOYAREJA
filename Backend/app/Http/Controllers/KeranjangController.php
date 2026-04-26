@@ -14,10 +14,14 @@ class KeranjangController extends Controller
      */
     public function index()
     {
+        $keranjang = Keranjang::with('product')
+                    ->where('user_id', Auth::id())
+                    ->get();
+                    
         return response()->json([
             'success' => true,
             'message' => 'List Keranjang ',
-            'data' => Auth::user()->keranjang
+            'data' => $keranjang
         ], 200);
     }
 

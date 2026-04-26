@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
-import { tambahSimpanan, lihatSemuaSimpananAnggota } from "../api/auth/simpanan";
+import { tambahSimpanan, updateSimpanan } from "../api/auth/simpanan";
+import { useSimpanan } from "../context/SimpananContext";
 
 // --- Fungsi Penolong ---
 
@@ -21,8 +22,10 @@ const formatInputRupiah = (angka) => {
 };
 
 export default function SimpananContent() {
-  const [simpananData, setSimpananData] = useState([]);
+  const { simpananData, fetchSimpanan } = useSimpanan();
+  
   const [searchTerm, setSearchTerm] = useState("");
+  const [id, setId] = useState("")
   const [isEditing, setIsEditing] = useState(false)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -33,28 +36,31 @@ export default function SimpananContent() {
     jumlah_sukarela: 0,
   });
 
-  // --- AMBIL DATA DARI BACKEND ---
-  const fetchData = async () => {
-    try {
-      const data = await lihatSemuaSimpananAnggota();
-      setSimpananData(data);
-    } catch (err) {
-      alert(err.message);
-    }
-  };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchSimpanan();
+  }, [fetchSimpanan]);
 
   // --- HANDLER SIMPAN ---
   const handleSave = async () => {
     try {
-      const response = await tambahSimpanan(formData);
-      if (response.success) {
-        alert("Simpanan Berhasil!");
-        fetchData(); // Refresh data tabel
-        closeFormModal();
+      if (isEditing) {
+        const response = await updateSimpanan(id, formData);
+        if (response.success) {
+          alert("Simpanan Berhasil diupdate!");
+          // fetchData(); // Refresh data tabel
+          closeFormModal();
+        } else {
+          alert(response.message)
+        }
+      } else {
+
+        const response = await tambahSimpanan(formData);
+        if (response.success) {
+          alert("Simpanan Berhasil!");
+          // fetchData(); // Refresh data tabel
+          closeFormModal();
+        }
       }
     } catch (err) {
       alert(err.message); // Menampilkan pesan error dari backend (misal: "Akses ditolak")
@@ -104,13 +110,13 @@ export default function SimpananContent() {
 
 
 
-  const handleDelete = (id) => {
-    if (
-      window.confirm("Apakah Anda yakin ingin menghapus data simpanan ini?")
-    ) {
-      setSimpananData(simpananData.filter((s) => s.id !== id));
-    }
-  };
+  // const handleDelete = (id) => {
+  //   if (
+  //     window.confirm("Apakah Anda yakin ingin menghapus data simpanan ini?")
+  //   ) {
+  //     setSimpananData(simpananData.filter((s) => s.id !== id));
+  //   }
+  // };
 
   return (
     <div className="animate-fadeInUp">
@@ -123,7 +129,6 @@ export default function SimpananContent() {
           + Tambah Simpanan
         </button>
       </div>
-
       {/* STATS GRID  */}
       <div className="grid grid-cols-3 gap-4 mb-7">
         <div className="bg-white border border-border rounded-2xl p-5 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md group">
@@ -230,13 +235,13 @@ export default function SimpananContent() {
                       </td>
                       <td className="px-4 py-3 flex gap-2">
                         <button
-                          onClick={() => openEditModal(item)}
+                          onClick={() => { openEditModal(item), setId(item.id) }}
                           className="bg-blue-50 text-blue-700 border border-border px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-all"
                         >
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(item.id)}
+                          // onClick={() => handleDelete(item.id)}
                           className="bg-[#fee2e2] text-[#991b1b] border border-[#fecaca] px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#fecaca] transition-all"
                         >
                           Hapus

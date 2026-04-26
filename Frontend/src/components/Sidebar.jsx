@@ -132,7 +132,7 @@ export default function Sidebar({
         ))}
       </nav>
 
-      {/* AREA PROFIL BAWAH */}
+      {/* AREA PROFIL BAWAH  LOGUT*/}
       <div className="p-4 border-t border-black/10 flex flex-col gap-2 flex-shrink-0">
         {isOpen ? (
           // Mode Terbuka: Tampilkan info lengkap & tombol logout
@@ -145,17 +145,13 @@ export default function Sidebar({
             </button>
           </>
         ) : (
-          // Mode Tertutup: Tampilkan hanya ikon profil yang mengarah ke halaman profil
+          // Mode Tertutup: Tampilkan hanya ikon keluar
           <button
-            onClick={() => setActiveSection("profil")}
-            title="Profil Koperasi"
-            className={`w-full flex items-center justify-center p-3 rounded-xl transition-all ${
-              activeSection === "profil"
-                ? "bg-gradient-to-br from-blue-500 to-blue-400 shadow-[0_4px_12px_rgba(37,99,235,0.35)]"
-                : "bg-black/5 hover:bg-black/10 text-black/70"
-            }`}
+            onClick={onLogout}
+            title="Keluar"
+            className="w-full flex items-center justify-center p-3 rounded-xl transition-all bg-white hover:bg-red-50 border border-black/20 text-black/80 hover:text-red-600 hover:border-red-200 shadow-sm"
           >
-            <span className="text-lg">👤</span>
+            <span className="text-lg">↩</span>
           </button>
         )}
       </div>

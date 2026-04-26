@@ -42,7 +42,7 @@ class SimpananController extends Controller
     {
         // $user = Auth::user();
 
-        // if (!$user->role === 'admin') {
+        // if ($user->role !== 'admin') {
         //     return response()->json([
         //         'success' => false,
         //         'message' => 'Akses ditolak'
@@ -134,39 +134,47 @@ class SimpananController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function updateStatus(Request $request, $id)
+    public function update(Request $request, Simpanan $simpanan)
     {
         $user = Auth::user();
-
-        if (!$user->role === 'admin') {
+        if ($user->role !== 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Akses ditolak'
             ], 403);
         }
 
+        // 2. Validasi (Sama dengan store untuk konsistensi nominal)
         $request->validate([
-            'status' => 'sometimes|in:pending,disetujui,ditolsk',
+            'jumlah_pokok' => 'sometimes|integer|in:0,50000',
+            'jumlah_wajib' => 'sometimes|integer|in:0,5000',
+            'jumlah_sukarela' => 'sometimes|integer|min:0',
         ]);
 
-        if ($request->status !== 'pending') {
+        return DB::transaction(function () use ($request, $simpanan) {
+            $oldTotal = $simpanan->total;
+
+            // Update data simpanan
+            $simpanan->fill($request->all());
+            
+            // Hitung total baru jika ada perubahan angka
+            $simpanan->total = $simpanan->jumlah_pokok + $simpanan->jumlah_wajib + $simpanan->jumlah_sukarela;
+            $simpanan->save();
+
+            // 3. Sinkronisasi Saldo Anggota
+            // Kurangi total lama, tambah total baru
+            $anggota = Anggota::where('user_id', $simpanan->user_id)->first();
+            if ($anggota) {
+                $anggota->decrement('total_simpanan', $oldTotal);
+                $anggota->increment('total_simpanan', $simpanan->total);
+            }
+
             return response()->json([
-                'success' => false, 
-                'message' => 'Data sudah diproses.'
-            ], 400);
-        }
-
-        $simpanan = Simpanan::findOrFail($id);
-
-        $simpanan->update([
-            'status' => $request->status
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data Berhasil Di Update',
-            'data' => $simpanan
-        ], 200);
+                'success' => true,
+                'message' => 'Data Berhasil Di Update dan Saldo Anggota Disinkronkan',
+                'data' => $simpanan
+            ], 200);
+        });
     }
 
 

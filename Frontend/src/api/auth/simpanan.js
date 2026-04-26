@@ -15,6 +15,21 @@ export const tambahSimpanan = async(formData) => {
     }
 }
 
+export const updateSimpanan = async(id, formData) => {
+    try {
+        const response = await api.put(`/simpanan/${id}`, formData)
+
+        if (response.data.success) {
+            return response.data
+        } else {
+            throw new Error(response.data.message);
+        }
+
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "Gagal tambah simpanan. Silakan coba lagi.");
+    }
+}
+
 export const lihatSemuaSimpananAnggota = async() => {
     try {
         const response = await api.get('/simpanan')

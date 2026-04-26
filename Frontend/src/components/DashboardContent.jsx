@@ -1,15 +1,46 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "../api/api";
+import { useSimpanan } from "../context/SimpananContext";
 
 export default function DashboardContent({ setActiveSection }) {
+  const [pesananList, setPesananList] = useState([]);
+  const { totalPokok, totalWajib, totalSukarela, loading } = useSimpanan();
+  const [isLoading, setIsLoading] = useState(false);
   // --- 1. STATE UNTUK DATA
 
+
+  const totalSimpanan = totalPokok + totalWajib + totalSukarela
   // Data Statistik Atas
-  const [statsData] = useState({
-    anggota: { value: "248", change: "↑ +12 anggota bulan ini" },
-    produk: { value: "64", change: "↑ +5 produk baru" },
-    pesanan: { value: "127", change: "↑ +28 pesanan bulan ini" },
-    simpanan: { value: "Rp 482 jt", change: "↑ +Rp 18 jt" },
-  });
+  const statsData = [
+    {
+      icon: "👥",
+      value: "248",
+      label: "Total Anggota Aktif",
+      change: "↑ +12 anggota bulan ini",
+      colorClass: "from-blue-600 to-blue-400",
+    },
+    {
+      icon: "🛒",
+      value: "64",
+      label: "Produk Tersedia",
+      change: "↑ +5 produk baru",
+      colorClass: "from-gold to-gold-light",
+    },
+    {
+      icon: "📦",
+      value: "127",
+      label: "Total Pesanan Masuk",
+      change: "↑ +28 pesanan bulan ini",
+      colorClass: "from-blue-500 to-blue-400",
+    },
+    {
+      icon: "💰",
+      value: `Rp ${totalSimpanan}`, // 🔥 dinamis
+      label: "Total Simpanan Anggota",
+      change: "↑ +Rp 18 jt",
+      colorClass: "from-purple-500 to-purple-400",
+    },
+  ];
 
   // Data Grafik Penjualan
   const [chartData] = useState([
@@ -20,6 +51,25 @@ export default function DashboardContent({ setActiveSection }) {
     { val: "65jt", height: "100px", label: "Mei", opacity: "1" },
     { val: "53jt", height: "84px", label: "Jun", opacity: "0.8" },
   ]);
+
+  useEffect(() => {
+    fetchDataPesanan();
+  }, []);
+
+  const fetchDataPesanan = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get("/pesanan");
+      setPesananList(response.data.data);
+    } catch (error) {
+      console.error("Gagal mengambil data:", error);
+      alert("Gagal memuat data pesanan dari server.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
 
   // Data Aktivitas Terbaru
   const [activities] = useState([
@@ -35,98 +85,23 @@ export default function DashboardContent({ setActiveSection }) {
       desc: "Siti Rahayu — No. Anggota #A248",
       time: "1 jam lalu",
     },
-    {
-      id: 3,
-      title: "Simpanan dicatat",
-      desc: "Ahmad Fauzi — Simpanan Wajib Rp 50.000",
-      time: "2 jam lalu",
-    },
-    {
-      id: 4,
-      title: "Produk stok diperbarui",
-      desc: "Minyak Goreng 1L — stok menjadi 120 unit",
-      time: "3 jam lalu",
-    },
-    {
-      id: 5,
-      title: "Pesanan #ORD-126 selesai",
-      desc: "Dewi Lestari — status diperbarui: Selesai",
-      time: "5 jam lalu",
-    },
-  ]);
 
-  // Data Tabel Pesanan
-  const [recentOrders] = useState([
-    {
-      id: "ORD-127",
-      name: "Budi Santoso",
-      product: "Beras Organik 5kg",
-      total: "Rp 130.000",
-      date: "07/03/2026",
-      status: "Diproses",
-      statusColor: "bg-[#fef3cd] text-[#854d0e]",
-    },
-    {
-      id: "ORD-126",
-      name: "Dewi Lestari",
-      product: "Minyak Goreng 1L",
-      total: "Rp 45.000",
-      date: "06/03/2026",
-      status: "Selesai",
-      statusColor: "bg-blue-100 text-blue-700",
-    },
-    {
-      id: "ORD-125",
-      name: "Hendra Wijaya",
-      product: "Gula Pasir 1kg",
-      total: "Rp 18.000",
-      date: "06/03/2026",
-      status: "Selesai",
-      statusColor: "bg-blue-100 text-blue-700",
-    },
-    {
-      id: "ORD-124",
-      name: "Rina Marlina",
-      product: "Tepung Terigu 1kg",
-      total: "Rp 14.000",
-      date: "05/03/2026",
-      status: "Dibatalkan",
-      statusColor: "bg-[#fee2e2] text-[#991b1b]",
-    },
   ]);
 
   return (
     <div className="animate-fadeInUp">
       {/*  STATS GRID  */}
       <div className="grid grid-cols-4 gap-4 mb-7">
-        <StatCard
-          icon="👥"
-          value={statsData.anggota.value}
-          label="Total Anggota Aktif"
-          change={statsData.anggota.change}
-          colorClass="from-blue-600 to-blue-400"
-        />
-        <StatCard
-          icon="🛒"
-          value={statsData.produk.value}
-          label="Produk Tersedia"
-          change={statsData.produk.change}
-          colorClass="from-gold to-gold-light"
-        />
-        <StatCard
-          icon="📦"
-          value={statsData.pesanan.value}
-          label="Total Pesanan Masuk"
-          change={statsData.pesanan.change}
-          colorClass="from-blue-500 to-blue-400"
-        />
-        <StatCard
-          icon="💰"
-          value={statsData.simpanan.value}
-          label="Total Simpanan Anggota"
-          change={statsData.simpanan.change}
-          colorClass="from-purple-500 to-purple-400"
-        />
+        {statsData.map((item, i) => (
+          <StatCard
+            key={i}
+            icon={item.icon}
+            value={item.value}
+            label={item.label}
+            change={item.change}
+            colorClass={item.colorClass}
+          />
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-5 mb-5">
@@ -218,21 +193,25 @@ export default function DashboardContent({ setActiveSection }) {
               </tr>
             </thead>
             <tbody>
-              {recentOrders.map((order) => (
+              {pesananList.map((order) => (
                 <tr
                   key={order.id}
                   className="hover:bg-blue-50 border-b border-blue-50"
                 >
                   <td className="px-4 py-3 text-dark font-bold">#{order.id}</td>
-                  <td className="px-4 py-3 text-dark">{order.name}</td>
+                  <td className="px-4 py-3 text-dark">{order.user?.anggota?.nama_lengkap}</td>
                   <td className="px-4 py-3 text-dark">{order.product}</td>
-                  <td className="px-4 py-3 text-dark">{order.total}</td>
-                  <td className="px-4 py-3 text-dark">{order.date}</td>
+                  <td className="px-4 py-3 text-dark">{order.total_harga}</td>
+                  <td className="px-4 py-3 text-dark">{new Date(order.created_at).toLocaleDateString("id-ID")}</td>
                   <td className="px-4 py-3">
                     <span
-                      className={`${order.statusColor} px-2.5 py-0.5 rounded-full text-[11px] font-semibold before:content-['●'] before:mr-1 before:text-[8px]`}
+                      className={`
+                        ${order.status_pesanan === 'diproses' ? "bg-[#fef3cd] text-[#854d0e]" : ""} 
+                        ${order.status_pesanan === 'selesai' ? "bg-blue-100 text-blue-700" : ""} 
+                        ${order.status_pesanan === 'dibatalkan' ? "bg-[#fee2e2] text-[#991b1b]" : ""}
+                        px-2.5 py-0.5 rounded-full text-[11px] font-semibold before:content-['●'] before:mr-1 before:text-[8px]`}
                     >
-                      {order.status}
+                      {order.status_pesanan}
                     </span>
                   </td>
                 </tr>

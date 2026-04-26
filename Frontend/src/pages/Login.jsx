@@ -1,99 +1,114 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import InputField from "../components/InputField";
+import llogin from "../assets/Kopdes.png";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
-
-  const { login } = useAuth()
+  const { login, user, loading } = useAuth();
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
 
-  // mengubah parameter agar menerima event 'e' dari form submit
-  const handleLogin = async (e) => {
-    e.preventDefault(); // agar halaman tidak refresh saat tombol diklik/dienter
+  const [isLoading, setIsLoading] = useState(false);
 
-    // Validasi input sebelum memanggil API
-    if (username.trim() === "" || password.trim() === "") {
-      alert("No hp dan password tidak boleh kosong");
-      return;
+  // 🔥 REDIRECT kalau sudah login
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     }
+  }, [user, loading, navigate]);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
-      await login(username, password)
-      navigate('/')
+      await login(formData.username, formData.password);
     } catch (error) {
       alert(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return (
-    <div className="flex items-center justify-center min-h-screen relative overflow-hidden bg-cream">
-      <div className="login-bg-shape-1"></div>
-      <div className="login-bg-shape-2"></div>
+  // 🔥 Jangan render apa-apa saat loading auth
+  if (loading) {
+    return <div className="text-center mt-10">Loading...</div>;
+  }
 
-      <div className="bg-[#f3f4f6]/80 backdrop-blur-xl border border-white/10 rounded-[20px] p-12 w-[420px] shadow-2xl relative z-10 animate-fadeInUp">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-white">
-            {/*gambar Kopdes.png*/}
-            <img
-              src="/src/assets/Kopdes.png"
-              alt="kopdes"
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <div className="text-black">
-            <div className="font-serif text-xl font-bold">KOPDES TOYAREJA</div>
-            <div className="text-[11px] tracking-[1.5px] uppercase">
-              Sistem Manajemen Koperasi
-            </div>
-          </div>
+  return (
+    <div className="min-h-screen bg-white flex flex-col items-center pt-5 px-5">
+      <div className="w-full max-w-[400px] flex flex-col items-center">
+        <div className="w-32 h-32 mb-6 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.3)] bg-white p-1">
+          <img
+            src={llogin}
+            alt="Logo KOPDES"
+            className="w-full h-full object-contain rounded-full"
+          />
         </div>
 
-        <h2 className="text-black text-[26px] font-bold mb-1.5">
-          Selamat Datang
-        </h2>
-        <p className="text-black text-sm mb-8">
-          Masuk ke panel administrasi koperasi desa
+        <h1 className="text-[32px] font-black mb-1">SELAMAT DATANG</h1>
+        <p className="text-gray-800 text-[17px] mb-8">
+          Masuk ke akun anda
         </p>
 
-        {/* TAG FORM */}
-        <form onSubmit={handleLogin}>
-          <div className="mb-5">
-            <label className="block text-black text-[13px] font-medium mb-2 tracking-wide">
-              Nomor Hp
-            </label>
-            <input
+        <div className="w-full bg-white rounded-[28px] shadow p-6 sm:p-8">
+          <form onSubmit={handleLogin}>
+            <InputField
+              label="Nomor Telepon"
+              name="username"
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required // required agar browser mencegat jika form kosong
-              className="w-full bg-white/10 border border-black/40 rounded-xl px-4 py-3 text-black text-sm outline-none focus:border-blue-400 focus:bg-white/20 focus:ring-3 focus:ring-blue-400/20 transition-all"
+              value={formData.username}
+              onChange={handleChange}
+              placeholder="Masukkan NIK anda"
             />
-          </div>
 
-          <div className="mb-5">
-            <label className="block text-black text-[13px] font-medium mb-2 tracking-wide">
-              Password
-            </label>
-            <input
+            <InputField
+              label="Password"
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required // Tambahkan required
-              className="w-full bg-white/10 border border-black/40 rounded-xl px-4 py-3 text-black text-sm outline-none focus:border-blue-400 focus:bg-white/20 focus:ring-3 focus:ring-blue-400/20 transition-all"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Masukkan Password"
             />
-          </div>
 
-          {/* Submit form*/}
-          <button
-            type="submit"
-            className="w-full bg-gradient-to-br from-blue-700 to-blue-500 text-white rounded-xl p-3.5 text-[15px] font-semibold hover:-translate-y-[1px] hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)] transition-all mt-2"
-          >
-            Masuk ke Dashboard
-          </button>
-        </form>
+            <div className="flex justify-end mb-6 mt-1">
+              <Link
+                to="/forgot-password"
+                className="text-[13px] font-bold hover:text-blue-600"
+              >
+                Lupa Password?
+              </Link>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-[#3b66f5] text-white font-bold py-3.5 rounded-xl mb-3 disabled:opacity-50"
+            >
+              {isLoading ? "Memproses..." : "Masuk"}
+            </button>
+
+            <Link
+              to="/register"
+              className="w-full flex justify-center border py-3.5 rounded-xl"
+            >
+              Registrasi
+            </Link>
+          </form>
+        </div>
       </div>
     </div>
   );

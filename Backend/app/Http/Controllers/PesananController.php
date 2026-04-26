@@ -24,7 +24,7 @@ class PesananController extends Controller
             ], 403);
         }
 
-        $data = Pesanan::latest()->get();
+        $data = Pesanan::with(['details.product', 'user.anggota'])->latest()->get();
 
         return response()->json([
             'success'=>true,
@@ -188,9 +188,7 @@ class PesananController extends Controller
      */
    public function updateStatus(Request $request, $id)
     {
-        $user = Auth::user();
-
-        if (!$user->role === 'admin') {
+        if (Auth::user()->role !== 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Akses ditolak'
