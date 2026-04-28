@@ -113,31 +113,31 @@ export default function Riwayat() {
                       <h2 className="font-bold text-gray-900 text-[15px] mb-0.5">
                         {order.id}
                       </h2>
-                      <p className="text-gray-500 text-[12px]">{order.date}</p>
+                      <p className="text-gray-500 text-[12px]">{order.created_at}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
                       <span className="px-3 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-600">
-                        {order.method === "Cash on Delivery"
+                        {order.metode_pembayaran === "cod"
                           ? "COD"
-                          : order.method}
+                          : order.metode_pembayaran}
                       </span>
                       <span
                         className={`px-3 py-0.5 rounded-full text-[10px] font-medium ${getStatusStyle(order.status)}`}
                       >
-                        {order.status}
+                        {order.status_pesanan}
                       </span>
                     </div>
                   </div>
 
                   <p className="text-gray-600 text-[13px] mb-3">
-                    {order.items.length} item
+                    {order.details?.length} item
                   </p>
                   <hr className="border-gray-100 my-3" />
 
                   <div className="flex justify-between items-center mt-1">
                     <span className="text-gray-500 text-[13px]">Total</span>
                     <span className="font-bold text-[#1e3a8a] text-[16px]">
-                      {formatRupiah(order.total)}
+                      {formatRupiah(order.total_harga)}
                     </span>
                   </div>
                 </div>
@@ -208,7 +208,7 @@ export default function Riwayat() {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500 text-[13px]">Tanggal</span>
                   <span className="font-bold text-[#1e293b] text-[13px]">
-                    {selectedOrder.date}
+                    {selectedOrder.created_at}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -216,7 +216,7 @@ export default function Riwayat() {
                     Metode Pembayaran
                   </span>
                   <span className="font-bold text-[#1e293b] text-[13px]">
-                    {selectedOrder.method}
+                    {selectedOrder.metode_pembayaran}
                   </span>
                 </div>
               </div>
@@ -229,18 +229,18 @@ export default function Riwayat() {
                   Item Pembelian
                 </h4>
                 <div className="flex flex-col gap-4">
-                  {selectedOrder.items.map((item, idx) => (
+                  {selectedOrder.details?.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-start">
                       <div className="flex flex-col">
                         <span className="font-bold text-[#1e293b] text-[14px] mb-0.5">
-                          {item.nama}
+                          {item.product?.nama_produk}
                         </span>
                         <span className="text-gray-400 text-[12px]">
-                          {item.qty} x {formatRupiah(item.harga)}
+                          {item.jumlah} x {formatRupiah(item.product?.harga)}
                         </span>
                       </div>
                       <span className="font-bold text-[#1e293b] text-[14px]">
-                        {formatRupiah(item.qty * item.harga)}
+                        {formatRupiah(item.jumlah * item.product?.harga)}
                       </span>
                     </div>
                   ))}
@@ -255,11 +255,11 @@ export default function Riwayat() {
                   Total
                 </span>
                 <span className="font-bold text-blue-600 text-[18px]">
-                  {formatRupiah(selectedOrder.total)}
+                  {formatRupiah(selectedOrder.total_harga)}
                 </span>
               </div>
 
-              {selectedOrder.points > 0 && (
+              {selectedOrder.poin > 0 && (
                 <div className="bg-[#fffcf0] border border-yellow-200 rounded-[14px] p-4 flex justify-between items-center mb-8">
                   <span className="font-bold text-[#92400e] text-[14px]">
                     Poin yang didapat

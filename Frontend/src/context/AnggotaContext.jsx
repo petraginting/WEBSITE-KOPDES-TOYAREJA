@@ -1,87 +1,103 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "../api/api";
+import { useAuth } from "./AuthContext";
 
 const AnggotaContext = createContext();
 
 export const AnggotaProvider = ({ children }) => {
-  const [anggotaList, setAnggotaList] = useState([]);
-  const [selectedAnggota, setSelectedAnggota] = useState(null);
-  const [loading, setLoading] = useState(false);
+    const { user } = useAuth()
 
-  // 🔥 GET ALL
-  const fetchAnggota = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/admin/anggota");
-      setAnggotaList(res.data.data);
-    } catch (err) {
-      console.error("Fetch anggota gagal:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // 🔥 GET DETAIL
-  const getAnggotaById = async (id) => {
-    setLoading(true);
-    try {
-      const res = await api.get(`/admin/anggota/${id}`);
-      setSelectedAnggota(res.data.data);
-    } catch (err) {
-      console.error("Detail anggota gagal:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const [anggotaList, setAnggotaList] = useState([]);
+    const [selectedAnggota, setSelectedAnggota] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-  // 🔥 TAMBAH
-  const tambahAnggota = async (no_hp) => {
-    try {
-      const res = await api.put("/admin/anggota/add", {
-        no_hp: no_hp
-      });
+    // 🔥 GET ALL
+    const fetchAnggota = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get("/admin/anggota");
+            setAnggotaList(res.data.data);
 
-      // refresh list
-      await fetchAnggota();
+        } catch (err) {
+            console.error("Fetch anggota gagal:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-      return res.data;
-    } catch (err) {
-      throw new Error(err.response?.data?.message || "Gagal tambah anggota");
-    }
-  };
+    // 🔥 GET DETAIL
+    const getAnggotaById = async (id) => {
+        setLoading(true);
+        try {
+            const res = await api.get(`/admin/anggota/${id}`);
+            setSelectedAnggota(res.data.data);
 
-  // 🔥 UPDATE
-  const updateAnggota = async (id, payload) => {
-    try {
-      const res = await api.put(`/admin/anggota/update/${id}`, payload);
+        } catch (err) {
+            console.error("Detail anggota gagal:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-      await fetchAnggota();
+    // 🔥 TAMBAH
+    const tambahAnggota = async (no_hp) => {
+        try {
+            const res = await api.put("/admin/anggota/add", {
+                no_hp: no_hp
+            });
 
-      return res.data;
-    } catch (err) {
-      throw new Error(err.response?.data?.message || "Gagal update anggota");
-    }
-  };
+            if (res.data.success) {
+                await fetchAnggota()
+                return res.data;
+            }
 
-  useEffect(() => {
-    fetchAnggota();
-  }, []);
+            alert(res.data.message)
 
-  return (
-    <AnggotaContext.Provider
-      value={{
-        anggotaList,
-        selectedAnggota,
-        loading,
-        fetchAnggota,
-        getAnggotaById,
-        tambahAnggota,
-        updateAnggota,
-      }}
-    >
-      {children}
-    </AnggotaContext.Provider>
-  );
+        } catch (err) {
+            throw new Error(err.response?.data?.message || "Gagal tambah anggota");
+        }
+    };
+
+    // 🔥 UPDATE
+    const updateAnggota = async (id, payload) => {
+        try {
+            const res = await api.put(`/admin/anggota/update/${id}`, payload);
+
+            setAnggotaList(prev =>
+                prev.map(item =>
+                    item.id === id ? { ...item, ...res.data.data } : item
+                )
+            );
+            alert('Berhasil update data anggota')
+
+            return res.data;
+        } catch (err) {
+            throw new Error(err.response?.data?.message || "Gagal update anggota");
+        }
+    };
+
+    useEffect(() => {
+        if (user?.role === 'admin') {
+            fetchAnggota();
+        }
+    }, [user]);
+
+    return (
+        <AnggotaContext.Provider
+            value={{
+                anggotaList,
+                selectedAnggota,
+                loading,
+                fetchAnggota,
+                getAnggotaById,
+                tambahAnggota,
+                updateAnggota,
+            }}
+        >
+            {children}
+        </AnggotaContext.Provider>
+    );
 };
 
 export const useAnggota = () => useContext(AnggotaContext);

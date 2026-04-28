@@ -117,10 +117,10 @@ class AnggotaController extends Controller
             'no_registrasi'      => 'sometimes|string|unique:anggotas,no_registrasi,' . $anggota->id,
             'nik'                => 'sometimes|string|size:16|unique:anggotas,nik,' . $anggota->id,
             'jenis_kelamin'      => 'sometimes|in:laki-laki,perempuan',
-            'tanggal_lahir'      => 'sometimes|date',
+            'tanggal_lahir'      => 'sometimes|nullable|date',
             'alamat'             => 'sometimes|string',
             'pekerjaan'          => 'sometimes|string',
-            'tanggal_bergabung'  => 'sometimes|date',
+            'tanggal_bergabung'  => 'sometimes|nullable|date',
             'status_keanggotaan' => 'sometimes|in:aktif,tidak_aktif',
         ]);
 

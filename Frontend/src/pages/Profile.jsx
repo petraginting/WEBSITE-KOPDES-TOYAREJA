@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../api/axios";
 import BottomNav from "../components/BottomNav";
+import { useAuth } from "../context/AuthContext";
 
 export default function Profile() {
+  const { logout } = useAuth()
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -211,11 +212,10 @@ export default function Profile() {
                     onClick={() =>
                       isEditing ? handleSave() : setIsEditing(true)
                     }
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
-                      isEditing
-                        ? "bg-green-100 text-green-700 hover:bg-green-200"
-                        : "text-[#2563eb] bg-blue-50 hover:bg-blue-100"
-                    }`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${isEditing
+                      ? "bg-green-100 text-green-700 hover:bg-green-200"
+                      : "text-[#2563eb] bg-blue-50 hover:bg-blue-100"
+                      }`}
                   >
                     {!isEditing && (
                       <div className="bg-white text-blue-500 p-0.5 rounded-sm shadow-sm">
@@ -351,7 +351,7 @@ export default function Profile() {
                 <button
                   onClick={() => {
                     if (window.confirm("Yakin ingin keluar?"))
-                      window.location.href = "/";
+                      logout()
                   }}
                   className="w-full bg-red-50 text-red-600 font-bold text-[15px] py-3.5 rounded-xl hover:bg-red-100 transition-colors"
                 >

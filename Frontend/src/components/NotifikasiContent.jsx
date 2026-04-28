@@ -1,28 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { List_notifikasi } from "../dataset/data.notifikasi";
+import { defaultFormDataNotification, mapNotificationPayload, setModalEdit, setModalTambah } from "../utilities/notification";
+import { createNotification, semuaDataNotification, updateNotification } from "../api/notification";
 
 export default function NotifikasiContent() {
-  const [notifList, setNotifList] = useState(List_notifikasi);
+  const [notifList, setNotifList] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [notifYangDiedit, setNotifYangDiedit] = useState(null);
 
-  const [formData, setFormData] = useState({
-    tipe: "Info",
-    title: "",
-    message: "",
-    target: "Semua Anggota",
-    validUntil: "",
-  });
+  const [formData, setFormData] = useState(defaultFormDataNotification());
 
   // --- LOGIKA STATUS ---
   const getStatus = (notif) => {
-    const today = new Date().toISOString().split("T")[0];
-    if (notif.status === "Nonaktif") return "Ditarik";
-    if (notif.validUntil && today > notif.validUntil) return "Expired";
-    return "Aktif";
+    // const today = new Date().toISOString().split("T")[0];
+    if (notif.status === "aktif") return "Aktif";
+    if (notif.status === 'expired') return "Expired";
+    return "Ditarik";
   };
+
+  const fetchDataNotification = async () => {
+    const data = await semuaDataNotification()
+    setNotifList(data)
+  }
+
+  useEffect(() => {
+    fetchDataNotification()
+  }, [])
 
   const activeNotifs = notifList.filter((n) => getStatus(n) === "Aktif");
 
@@ -34,52 +38,42 @@ export default function NotifikasiContent() {
 
   const openModalTambah = () => {
     setEditMode(false);
-    setFormData({
-      tipe: "Info",
-      title: "",
-      message: "",
-      target: "Semua Anggota",
-      validUntil: "",
-    });
+    setFormData(setModalTambah());
     setIsModalOpen(true);
   };
 
   const openModalEdit = (notif) => {
     setEditMode(true);
     setNotifYangDiedit(notif);
-    setFormData({
-      tipe: notif.tipe,
-      title: notif.title,
-      message: notif.message,
-      target: notif.target,
-      validUntil: notif.validUntil || "",
-    });
+    setFormData(setModalEdit(notif));
     setIsModalOpen(true);
   };
 
-  const handleSimpanNotif = (e) => {
+  const handleSimpanNotif = async (e) => {
     e.preventDefault();
-    const today = new Date().toISOString().split("T")[0];
 
-    if (editMode && notifYangDiedit) {
-      // MODE EDIT
-      const updatedList = notifList.map((n) =>
-        n.id === notifYangDiedit.id ? { ...n, ...formData } : n,
-      );
-      setNotifList(updatedList);
-    } else {
-      // MODE TAMBAH
-      const notifBaru = {
-        id: Date.now(),
-        ...formData,
-        date: today,
-        status: "Aktif",
-      };
-      setNotifList([notifBaru, ...notifList]);
+    try {
+      if (editMode && notifYangDiedit) {
+        // MODE EDIT
+        const res = await updateNotification(notifYangDiedit.id, mapNotificationPayload(formData))
+        setNotifList((prev) =>
+          prev.map((n) => (n.id === res.id ? res : n))
+        )
+      } else {
+        // MODE TAMBAH
+        const res = await createNotification(mapNotificationPayload(formData))
+        setNotifList((prev) => [res, ...prev])
+      }
+
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error(error.message);
+      alert(error.message)
     }
-
-    setIsModalOpen(false);
   };
+
+  console.log(formData);
+
 
   const handleTarikNotif = (id) => {
     if (window.confirm("Tarik notifikasi ini dari publik?")) {
@@ -165,7 +159,7 @@ export default function NotifikasiContent() {
                     className="border-t border-gray-100 hover:bg-gray-50"
                   >
                     <td className="px-4 py-3 text-dark font-medium">
-                      {n.title}
+                      {n.judul_notifikasi}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={getStatus(n)} />
@@ -198,14 +192,14 @@ export default function NotifikasiContent() {
                 <div className="grid grid-cols-2 gap-3">
                   <FormGroup label="Tipe">
                     <select
-                      name="tipe"
-                      value={formData.tipe}
+                      name="tipe_notifikasi"
+                      value={formData.tipe_notifikasi}
                       onChange={handleInputChange}
                       className="input-style"
                     >
-                      <option value="Info">Info</option>
-                      <option value="Promo">Promo</option>
-                      <option value="Produk">Produk</option>
+                      <option value="info">Info</option>
+                      <option value="promo">Promo</option>
+                      <option value="produk">Produk</option>
                     </select>
                   </FormGroup>
                   <FormGroup label="Target Anggota">
@@ -215,16 +209,16 @@ export default function NotifikasiContent() {
                       onChange={handleInputChange}
                       className="input-style"
                     >
-                      <option value="Semua Anggota">Semua</option>
-                      <option value="Anggota Aktif">Hanya Aktif</option>
-                      <option value="Pengurus">Hanya Pengurus</option>
+                      <option value="semua">Semua</option>
+                      <option value="aktif">Hanya Aktif</option>
+                      <option value="anggota">Hanya Anggota</option>
                     </select>
                   </FormGroup>
                 </div>
                 <FormGroup label="Judul Notifikasi">
                   <input
-                    name="title"
-                    value={formData.title}
+                    name="judul_notifikasi"
+                    value={formData.judul_notifikasi}
                     onChange={handleInputChange}
                     required
                     className="input-style"
@@ -232,8 +226,8 @@ export default function NotifikasiContent() {
                 </FormGroup>
                 <FormGroup label="Isi Pesan">
                   <textarea
-                    name="message"
-                    value={formData.message}
+                    name="isi_pesan"
+                    value={formData.isi_pesan}
                     onChange={handleInputChange}
                     required
                     rows="3"
@@ -243,8 +237,8 @@ export default function NotifikasiContent() {
                 <FormGroup label="Berlaku Hingga">
                   <input
                     type="date"
-                    name="validUntil"
-                    value={formData.validUntil}
+                    name="tanggal_berlaku"
+                    value={formData.tanggal_berlaku}
                     onChange={handleInputChange}
                     className="input-style"
                   />
@@ -278,18 +272,18 @@ export default function NotifikasiContent() {
 
 function NotifCard({ data, onEdit, onTarik }) {
   const styles = {
-    Promo: "bg-amber-50 text-amber-700 border-amber-100",
-    Info: "bg-blue-50 text-blue-700 border-blue-100",
-    Produk: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    promo: "bg-amber-50 text-amber-700 border-amber-100",
+    info: "bg-blue-50 text-blue-700 border-blue-100",
+    produk: "bg-emerald-50 text-emerald-700 border-emerald-100",
   };
 
   return (
     <div className="group bg-white border border-border rounded-2xl p-4 transition-all hover:shadow-md relative">
       <div className="flex justify-between items-start mb-2">
         <span
-          className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${styles[data.tipe]}`}
+          className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${styles[data.tipe_notifikasi]}`}
         >
-          {data.tipe}
+          {data.tipe_notifikasi}
         </span>
         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
           <button
@@ -306,11 +300,11 @@ function NotifCard({ data, onEdit, onTarik }) {
           </button>
         </div>
       </div>
-      <h4 className="font-bold text-dark text-sm">{data.title}</h4>
-      <p className="text-xs text-light mt-1 leading-relaxed">{data.message}</p>
+      <h4 className="font-bold text-dark text-sm">{data.judul_notifikasi}</h4>
+      <p className="text-xs text-light mt-1 leading-relaxed">{data.isi_pesan}</p>
       <div className="mt-4 pt-3 border-t border-gray-50 flex justify-between items-center text-[10px]">
         <span className="text-red-500 font-bold">
-          📅 Hingga: {data.validUntil || "Selamanya"}
+          📅 Hingga: {data.tanggal_berlaku || "Selamanya"}
         </span>
         <span className="text-light">{data.date}</span>
       </div>

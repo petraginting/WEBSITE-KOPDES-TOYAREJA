@@ -10,7 +10,7 @@ export default function Register() {
   const [formData, setFormData] = useState({
     nama_lengkap: "",
     no_hp: "",
-    nik: "",
+    jenis_kelamin: "",
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -29,22 +29,22 @@ export default function Register() {
       const response = await api.post("/auth/register/send-otp", {
         nama_lengkap: formData.nama_lengkap,
         no_hp: formData.no_hp,
-        nik: formData.nik,
+        jenis_kelamin: formData.jenis_kelamin.toLowerCase(),
         password: formData.password,
         password_confirmation: confirmPassword,
       });
 
-      if (response?.data) {
+      if (response?.data.success) {
         sessionStorage.setItem("no_hp", formData.no_hp);
         alert("Registrasi Berhasil! Silakan cek OTP Anda.");
         navigate("/verify");
       } else {
-        console.log(response?.data);
-        alert(response?.data);
+        console.log(response?.data.message);
+        alert(response?.data.message);
       }
     } catch (error) {
       console.error("Registrasi Gagal:", error.response?.data?.message);
-      alert(error.response?.data || "Terjadi kesalahan saat registrasi");
+      alert(error.response?.data?.message || "Terjadi kesalahan saat registrasi");
     } finally {
       setIsLoading(false);
     }
@@ -108,12 +108,12 @@ export default function Register() {
               icon={UserIcon}
             />
             <InputField
-              label="NIK"
-              name="nik"
+              label="Jenis Kelamin"
+              name="jenis_kelamin"
               type="text"
-              value={formData.nik}
+              value={formData.jenis_kelamin}
               onChange={handleChange}
-              placeholder="Masukkan NIK anda"
+              placeholder="Masukkan jenis kelamin anda"
               icon={UserIcon}
             />
             <InputField

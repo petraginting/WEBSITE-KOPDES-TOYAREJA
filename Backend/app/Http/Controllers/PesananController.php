@@ -35,7 +35,7 @@ class PesananController extends Controller
 
     public function pesananUser()
     {
-        $data = Pesanan::where('user_id', Auth::user()->id)->get();
+        $data = Pesanan::with('details.product')->where('user_id', Auth::user()->id)->get();
 
         return response()->json([
             'success'=>true,
@@ -109,7 +109,7 @@ class PesananController extends Controller
             // Tambah poin setiap kelipatan Rp50.000
             if ($totalHarga >= 50000) {
                 $tambahPoin = floor($totalHarga / 50000);
-                $user->anggota()->increment('poin', $tambahPoin);
+                $user->anggota->increment('poin', $tambahPoin);
             }
 
             // Simpan Pesanan (Header)
@@ -160,7 +160,7 @@ class PesananController extends Controller
      */
     public function show($id)
     {
-        $pesanan = Pesanan::with('details.product')->find($id);
+        $pesanan = Pesanan::with(['details.product', 'user.anggota'])->find($id);
 
         if (!$pesanan) {
             return response()->json([

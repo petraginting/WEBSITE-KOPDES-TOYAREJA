@@ -45,7 +45,6 @@ export default function Home() {
       try {
         setIsLoading(true);
         const data = await getAllProducts();
-        console.log("Produk yang sudah di-normalize:", data); // DEBUG
         setProducts(data);
       } catch (error) {
         console.error("Gagal mengambil produk:", error);

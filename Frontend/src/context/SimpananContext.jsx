@@ -1,9 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { lihatSemuaSimpananAnggota } from "../api/auth/simpanan";
+import { lihatSemuaSimpananAnggota, updateSimpanan } from "../api/auth/simpanan";
+import { useAuth } from "./AuthContext";
 
 const SimpananContext = createContext();
 
 export const SimpananProvider = ({ children }) => {
+    const { user } = useAuth()
+
     const [simpananData, setSimpananData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -18,9 +21,28 @@ export const SimpananProvider = ({ children }) => {
         }
     };
 
+    const fetchUpdateSimpanan = async (id, payload) => {
+        try {
+            const data = await updateSimpanan(id, payload);
+
+            setSimpananData(prev =>
+                prev.map(item =>
+                    item.id === id ? { ...item, ...data.data } : item
+                )
+            );
+            alert('Berhasil update data simpanan')
+
+            // return data;
+        } catch (err) {
+            throw new Error(err.response?.data?.message || "Gagal update anggota");
+        }
+    };
+
     useEffect(() => {
-        fetchSimpanan();
-    }, []);
+        if (user) {
+            fetchSimpanan();
+        }
+    }, [user]);
 
     // 🔥 hitung total di sini (bukan di component)
     const totalPokok = simpananData.reduce((sum, i) => sum + (i.jumlah_pokok || 0), 0);
@@ -35,6 +57,7 @@ export const SimpananProvider = ({ children }) => {
                 totalWajib,
                 totalSukarela,
                 fetchSimpanan,
+                fetchUpdateSimpanan,
                 loading
             }}
         >

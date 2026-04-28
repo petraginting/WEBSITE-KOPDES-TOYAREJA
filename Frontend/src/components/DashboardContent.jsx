@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/api";
 import { useSimpanan } from "../context/SimpananContext";
+import { getAllProducts } from "../api/products";
+import { useAnggota } from "../context/AnggotaContext";
+import { formatRupiah } from "../utilities/simpanan";
 
 export default function DashboardContent({ setActiveSection }) {
+  const { anggotaList } = useAnggota()
+
   const [pesananList, setPesananList] = useState([]);
-  const { totalPokok, totalWajib, totalSukarela, loading } = useSimpanan();
-  const [isLoading, setIsLoading] = useState(false);
+  const [product, setProduct] = useState([])
+  const { totalPokok, totalWajib, totalSukarela } = useSimpanan();
+  // const [isLoading, setIsLoading] = useState(false);
   // --- 1. STATE UNTUK DATA
 
 
@@ -14,28 +20,28 @@ export default function DashboardContent({ setActiveSection }) {
   const statsData = [
     {
       icon: "👥",
-      value: "248",
+      value: anggotaList.length,
       label: "Total Anggota Aktif",
       change: "↑ +12 anggota bulan ini",
       colorClass: "from-blue-600 to-blue-400",
     },
     {
       icon: "🛒",
-      value: "64",
+      value: product.length,
       label: "Produk Tersedia",
       change: "↑ +5 produk baru",
       colorClass: "from-gold to-gold-light",
     },
     {
       icon: "📦",
-      value: "127",
+      value: pesananList.length,
       label: "Total Pesanan Masuk",
       change: "↑ +28 pesanan bulan ini",
       colorClass: "from-blue-500 to-blue-400",
     },
     {
       icon: "💰",
-      value: `Rp ${totalSimpanan}`, // 🔥 dinamis
+      value: formatRupiah(totalSimpanan), // 🔥 dinamis
       label: "Total Simpanan Anggota",
       change: "↑ +Rp 18 jt",
       colorClass: "from-purple-500 to-purple-400",
@@ -52,22 +58,35 @@ export default function DashboardContent({ setActiveSection }) {
     { val: "53jt", height: "84px", label: "Jun", opacity: "0.8" },
   ]);
 
-  useEffect(() => {
-    fetchDataPesanan();
-  }, []);
+
 
   const fetchDataPesanan = async () => {
-    setIsLoading(true);
+    // setIsLoading(true);
     try {
-      const response = await api.get("/pesanan");
+      const response = await api.get("/admin/pesanan");
       setPesananList(response.data.data);
     } catch (error) {
       console.error("Gagal mengambil data:", error);
       alert("Gagal memuat data pesanan dari server.");
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
+
+  const fetchDataProduct = async () => {
+    try {
+      const data = await getAllProducts()
+      setProduct(data)
+    } catch (error) {
+      console.error(error);
+      alert("Gagal memuat data produk dari server.")
+    }
+  }
+
+  useEffect(() => {
+    fetchDataProduct()
+    fetchDataPesanan();
+  }, []);
 
 
 
@@ -179,7 +198,7 @@ export default function DashboardContent({ setActiveSection }) {
                   Anggota
                 </th>
                 <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
-                  Produk
+                  Jumlah Produk
                 </th>
                 <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
                   Total
@@ -200,15 +219,16 @@ export default function DashboardContent({ setActiveSection }) {
                 >
                   <td className="px-4 py-3 text-dark font-bold">#{order.id}</td>
                   <td className="px-4 py-3 text-dark">{order.user?.anggota?.nama_lengkap}</td>
-                  <td className="px-4 py-3 text-dark">{order.product}</td>
-                  <td className="px-4 py-3 text-dark">{order.total_harga}</td>
+                  <td className="px-4 py-3 text-dark">{order.details?.length}</td>
+                  <td className="px-4 py-3 text-dark">{formatRupiah(order.total_harga)}</td>
                   <td className="px-4 py-3 text-dark">{new Date(order.created_at).toLocaleDateString("id-ID")}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`
-                        ${order.status_pesanan === 'diproses' ? "bg-[#fef3cd] text-[#854d0e]" : ""} 
-                        ${order.status_pesanan === 'selesai' ? "bg-blue-100 text-blue-700" : ""} 
-                        ${order.status_pesanan === 'dibatalkan' ? "bg-[#fee2e2] text-[#991b1b]" : ""}
+                        ${order.status_pesanan === 'pending' ? "bg-amber-100 text-amber-700" : ""} 
+                        ${order.status_pesanan === 'diproses' ? "bg-blue-100 text-blue-700" : ""} 
+                        ${order.status_pesanan === 'selesai' ? "bg-emerald-100 text-emerald-700" : ""} 
+                        ${order.status_pesanan === 'dibatalkan' ? "bg-red-100 text-red-700" : ""}
                         px-2.5 py-0.5 rounded-full text-[11px] font-semibold before:content-['●'] before:mr-1 before:text-[8px]`}
                     >
                       {order.status_pesanan}

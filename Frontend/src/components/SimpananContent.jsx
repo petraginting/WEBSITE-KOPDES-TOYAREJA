@@ -1,29 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Modal from "./Modal";
-import { tambahSimpanan, updateSimpanan } from "../api/auth/simpanan";
+import { tambahSimpanan } from "../api/auth/simpanan";
 import { useSimpanan } from "../context/SimpananContext";
+import { formatInputRupiah, formatRupiah } from "../utilities/simpanan";
 
-// --- Fungsi Penolong ---
-
-// 1. Format untuk tampilan di Tabel & Stats (Contoh: Rp 1.000.000)
-const formatRupiah = (angka) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(angka);
-};
-
-// 2. Format untuk di dalam Input saat mengetik (Contoh: 1.000.000)
-const formatInputRupiah = (angka) => {
-  if (angka === 0 || !angka) return "";
-  const numberString = angka.toString().replace(/[^0-9]/g, "");
-  return numberString.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-};
 
 export default function SimpananContent() {
-  const { simpananData, fetchSimpanan } = useSimpanan();
-  
+  const { simpananData, fetchUpdateSimpanan } = useSimpanan();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [id, setId] = useState("")
   const [isEditing, setIsEditing] = useState(false)
@@ -36,23 +20,12 @@ export default function SimpananContent() {
     jumlah_sukarela: 0,
   });
 
-
-  useEffect(() => {
-    fetchSimpanan();
-  }, [fetchSimpanan]);
-
   // --- HANDLER SIMPAN ---
   const handleSave = async () => {
     try {
       if (isEditing) {
-        const response = await updateSimpanan(id, formData);
-        if (response.success) {
-          alert("Simpanan Berhasil diupdate!");
-          // fetchData(); // Refresh data tabel
-          closeFormModal();
-        } else {
-          alert(response.message)
-        }
+        await fetchUpdateSimpanan(id, formData);
+        closeFormModal()
       } else {
 
         const response = await tambahSimpanan(formData);
@@ -185,9 +158,6 @@ export default function SimpananContent() {
           <h3 className="text-[15px] font-bold text-dark">
             Daftar Simpanan Anggota
           </h3>
-          <button className="bg-blue-50 text-blue-700 border border-border px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-all">
-            ⬇ Export Laporan
-          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -284,33 +254,24 @@ export default function SimpananContent() {
           </>
         }
       >
-        <div className="grid grid-cols-2 gap-[16px] mb-[16px]">
-          <div>
-            <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              No. Registrasi
-            </label>
-            <input
-              name="no_registrasi"
-              value={formData.no_registrasi}
-              onChange={handleInputChange}
-              type="text"
-              placeholder="01"
-              className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              Nama Lengkap
-            </label>
-            <input
-              name="nama_lengkap"
-              value={formData.nama_lengkap}
-              onChange={handleInputChange}
-              type="text"
-              placeholder="Budi Santoso"
-              className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
-            />
-          </div>
+        <div className="grid gap-[16px] mb-[16px]">
+          {!isEditing ?
+            <div>
+              <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                No. Registrasi
+              </label>
+              <input
+                name="no_registrasi"
+                value={formData.no_registrasi}
+                onChange={handleInputChange}
+                type="text"
+                placeholder="01"
+                className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
+              />
+            </div>
+            : ''
+          }
+
 
           <div className="col-span-full space-y-[16px]">
             <div>

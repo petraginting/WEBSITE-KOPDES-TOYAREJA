@@ -72,7 +72,7 @@ export default function Login() {
               type="text"
               value={formData.username}
               onChange={handleChange}
-              placeholder="Masukkan NIK anda"
+              placeholder="Masukkan nomor hp anda"
             />
 
             <InputField

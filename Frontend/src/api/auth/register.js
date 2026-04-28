@@ -2,12 +2,12 @@ import { api } from "../api";
 
 var noHp = ""; // Variabel global untuk menyimpan nomor telepon selama proses OTP
 
-export const registerSendOtp = async ({ nama_lengkap, no_hp, nik, password }) => {
+export const registerSendOtp = async ({ nama_lengkap, no_hp, jenis_kelamin, password }) => {
     try {
         const response = await api.post('/auth/register/send-otp', {
             nama_lengkap: nama_lengkap,
             no_hp: no_hp,
-            nik: nik,
+            jenis_kelamin: jenis_kelamin,
             password: password,
         });
 

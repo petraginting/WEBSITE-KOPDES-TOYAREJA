@@ -40,18 +40,16 @@ class SimpananController extends Controller
      */
     public function store(Request $request)
     {
-        // $user = Auth::user();
 
-        // if ($user->role !== 'admin') {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => 'Akses ditolak'
-        //     ], 403);
-        // }
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak'
+            ], 403);
+        }
 
         $request->validate([
             'no_registrasi' => 'required|string|exists:anggotas,no_registrasi',
-            'nama_lengkap' => 'required|string',
             'jumlah_pokok' => 'required|integer|min:0',
             'jumlah_wajib' => 'required|integer|min:0',
             'jumlah_sukarela' => 'required|integer|min:0'
@@ -92,7 +90,7 @@ class SimpananController extends Controller
         return DB::transaction(function () use ($request, $totalSimpanan, $anggota) {
             $simpanan = Simpanan::create([
                 'user_id' => $anggota->user_id,
-                'nama_lengkap' => $request->nama_lengkap,
+                'nama_lengkap' => $anggota->nama_lengkap,
                 'jumlah_pokok' => $request->jumlah_pokok,
                 'jumlah_wajib' => $request->jumlah_wajib,
                 'jumlah_sukarela' => $request->jumlah_sukarela,

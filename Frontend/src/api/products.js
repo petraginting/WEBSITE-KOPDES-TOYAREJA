@@ -19,7 +19,6 @@ const normalizeProduct = (product) => {
 export const getAllProducts = async () => {
   try {
     const response = await api.get("/products");
-    console.log("Raw API response:", response.data); // DEBUG
     const products = response.data.data || [];
     // Normalize setiap produk
     return products.map(normalizeProduct);

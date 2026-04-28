@@ -46,9 +46,9 @@ export default function AnggotaContent() {
     jenisKelamin: item.jenis_kelamin,
     nomorTelepon: item.user?.no_hp || "-",
     alamatLengkap: item.alamat || "-",
-    tanggalLahir: item.tanggal_lahir || "-",
-    tanggalBergabung: item.tanggal_bergabung || "-",
-    status: item.status_keanggotaan === 'aktif' ? "Aktif" : "Tidak-Aktif",
+    tanggalLahir: item.tanggal_lahir || null,
+    tanggalBergabung: item.tanggal_bergabung || null,
+    status: item.status_keanggotaan,
   }));
 
 
@@ -56,14 +56,14 @@ export default function AnggotaContent() {
   const filteredMembers = normalizedMembers.filter((member) => {
     // Cek Search (Nama, No. Anggota, atau No. Telepon)
     const matchSearch =
-      member.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.nomorRegistrasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.nomorTelepon.includes(searchTerm);
+      member.namaLengkap?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.nomorRegistrasi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.nomorTelepon?.includes(searchTerm);
 
     // Cek Filter Status
     const matchStatus =
       filterStatus === "Semua Status" ||
-      member.status.toLowerCase() === filterStatus.toLowerCase();
+      member.status?.toLowerCase() === filterStatus.toLowerCase();
 
     return matchSearch && matchStatus;
   });
@@ -75,21 +75,40 @@ export default function AnggotaContent() {
   };
 
   const handleSave = async () => {
+
     try {
       if (isEditing) {
-        await updateAnggota(formData.id, {
-          nama_lengkap: formData.namaLengkap,
-          no_registrasi: formData.nomorRegistrasi,
-          alamat: formData.alamatLengkap,
-          status_keanggotaan: formData.status
-        })
+        if (
+          formData.namaLengkap === '' || formData.nomorRegistrasi === '' ||
+          formData.namaLengkap === null || formData.nomorRegistrasi === null
+        ) {
+          alert("Nama atau no registrasi tidak boleh kosong")
+        } else {
+          await updateAnggota(formData.id, {
+            nama_lengkap: formData.namaLengkap,
+            no_registrasi: formData.nomorRegistrasi,
+            nik: formData?.nomorKTP?.toString(),
+            tanggal_lahir: formData.tanggalLahir || null,
+            alamat: formData.alamatLengkap,
+            jenis_kelamin: formData.jenisKelamin,
+            pekerjaan: formData.pekerjaan,
+            tanggal_bergabung: formData.tanggalBergabung || null,
+            status_keanggotaan: formData.status
+          })
+
+          closeFormModal();
+        }
       } else {
+        if (formData.nomorTelepon === '') {
+          alert('Nomor hp harus diisi!')
+          return
+        }
         await tambahAnggota(formData.nomorTelepon);
+        closeFormModal();
       }
 
-      closeFormModal();
     } catch (error) {
-      alert(error.message);
+      alert(error.message)
     }
   };
 
@@ -154,7 +173,7 @@ export default function AnggotaContent() {
         >
           <option value="Semua Status">Semua Status</option>
           <option value="Aktif">Aktif</option>
-          <option value="Tidak-Aktif">Tidak-Aktif</option>
+          <option value="Tidak_Aktif">Tidak-Aktif</option>
         </select>
         <button className="bg-blue-50 text-blue-700 border border-border px-[18px] py-[9px] rounded-[12px] text-[13px] font-semibold hover:bg-blue-100 transition-all flex items-center gap-[6px]">
           Filter
@@ -196,19 +215,19 @@ export default function AnggotaContent() {
                     className="hover:bg-blue-50 transition-colors border-b border-blue-50 last:border-none"
                   >
                     <td className="px-[16px] py-[13px] text-dark">
-                      {member.nomorRegistrasi}
+                      {member.nomorRegistrasi || '-'}
                     </td>
                     <td className="px-[16px] py-[13px] text-dark">
                       {member.namaLengkap}
                     </td>
                     <td className="px-[16px] py-[13px] text-dark truncate max-w-[150px]">
-                      {member.alamatLengkap}
+                      {member.alamatLengkap || '-'}
                     </td>
                     <td className="px-[16px] py-[13px] text-dark">
                       {member.nomorTelepon}
                     </td>
                     <td className="px-[16px] py-[13px] text-dark">
-                      {member.tanggalBergabung}
+                      {member.tanggalBergabung || '-'}
                     </td>
                     <td className="px-[16px] py-[13px]">
                       <span
@@ -411,8 +430,8 @@ export default function AnggotaContent() {
                     onChange={handleInputChange}
                     className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white cursor-pointer"
                   >
-                    <option value="Laki-laki">Laki-laki</option>
-                    <option value="Perempuan">Perempuan</option>
+                    <option value="laki-laki">Laki-laki</option>
+                    <option value="perempuan">Perempuan</option>
                   </select>
                 </div>
                 <div>
