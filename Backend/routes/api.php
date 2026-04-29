@@ -26,12 +26,19 @@ Route::apiResource('products', ProductController::class)->middleware('auth:sanct
 
 // Admin
 Route::prefix('admin')->group(function () {
-
+    
     Route::get('/anggota', [AnggotaController::class, 'semuaAnggota'])->middleware('auth:sanctum');
+    Route::get('/anggota/{anggota}', [AnggotaController::class, 'show'])->middleware('auth:sanctum');
+    Route::put('/anggota/add', [AnggotaController::class, 'tambahAnggota'])->middleware('auth:sanctum');
     Route::put('/anggota/update/{anggota}', [AnggotaController::class, 'updateDataAnggota'])->middleware('auth:sanctum');
+    
+
+    Route::post('/products/add', [ProductController::class, 'store'])->middleware('auth:sanctum');
+    Route::put('/products/{id}', [ProductController::class, 'update'])->middleware('auth:sanctum');
+
 
     Route::get('/pesanan', [PesananController::class, 'semuaPesananUser'])->middleware('auth:sanctum');
-    Route::put('/pesanan/update-status/{pesanan}', [PesananController::class, 'updateStatus'])->middleware('auth:sanctum');
+    Route::put('/pesanan/update-status/{id}', [PesananController::class, 'updateStatus'])->middleware('auth:sanctum');
 
     // Notifikasi
     Route::prefix('notifikasi')->group(function () {
@@ -46,6 +53,7 @@ Route::prefix('admin')->group(function () {
 Route::prefix('pesanan')->group(function () {
     Route::post('/checkout', [PesananController::class, 'checkout'])->middleware('auth:sanctum');
     Route::get('/{pesanan}', [PesananController::class, 'show'])->middleware('auth:sanctum');
+    Route::get('/', [PesananController::class, 'pesananUser'])->middleware('auth:sanctum');
     Route::delete('/{pesanan}', [PesananController::class, 'destroy'])->middleware('auth:sanctum');
 });
 
@@ -60,6 +68,7 @@ Route::prefix('keranjang')->group(function () {
 
 // Simpanan
 Route::post('/simpanan/add', [SimpananController::class, 'store'])->middleware('auth:sanctum');
+Route::put('/simpanan/{simpanan}', [SimpananController::class, 'update'])->middleware('auth:sanctum');
 Route::get('/simpanan', [SimpananController::class, 'index'])->middleware('auth:sanctum');
 
 
@@ -73,6 +82,12 @@ Route::prefix('auth')->group(function () {
     Route::post('forgot-password/reset', [AuthOtpController::class, 'updatePassword']);
     Route::post('forgot-password/send-otp', [AuthOtpController::class, 'sendOtpForgotPassword']);
     Route::post('forgot-password/verify-otp', [AuthOtpController::class, 'verifyOtpForgotPassword']);
+
+    // Protected routes (memerlukan token)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/user-profile', [LoginController::class, 'getUserProfile']);
+        Route::post('/logout', [LoginController::class, 'logout']);
+    });
 });
 
 

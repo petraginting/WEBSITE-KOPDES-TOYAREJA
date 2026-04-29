@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
@@ -14,117 +14,127 @@ import VerifyFPW from "./pages/VerifyForgotPW";
 import VerifyRegist from "./pages/VerifyRegist";
 import MainDashboard from "./pages/MainDashboard";
 import { Children } from "react";
+import { useAuth } from "./context/AuthContext";
 
 // gerbang utama cek login
 const PrivateRoute = ({ children }) => {
-  const token = sessionStorage.getItem("token");
+  const { loading } = useAuth();
+  const token = localStorage.getItem("token");
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
+
   return children;
 };
 
 //cek login dan cek role
 const AdminRoute = ({ children }) => {
-  const token = sessionStorage.getItem("token");
-  const role = sessionStorage.getItem("role");
+  const { user, loading } = useAuth();
+  const token = localStorage.getItem("token");
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  //kalau login dan bukan admin kembali ke beranda
-  if (role !== "admin") {
-    alert("Akses ditolak! Anda bukan Admin.");
+
+  if (user?.role !== "admin") {
     return <Navigate to="/" replace />;
   }
-  // kalau admin dan punya token langsung masuk
+
   return children;
 };
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Halaman login */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="verify" element={<VerifyRegist />} />
-        {/* Lupa Password */}
-        <Route path="/forgot-password">
-          <Route index element={<ForgotPassword />} />
-          <Route path="verify-forgot-password" element={<VerifyFPW />} />
-          <Route path="reset-password" element={<ResetPassword />} />
-        </Route>
+    <Routes>
+      {/* Halaman login */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="verify" element={<VerifyRegist />} />
+      {/* Lupa Password */}
+      <Route path="/forgot-password">
+        <Route index element={<ForgotPassword />} />
+        <Route path="verify-forgot-password" element={<VerifyFPW />} />
+        <Route path="reset-password" element={<ResetPassword />} />
+      </Route>
 
-        {/* Menu admin */}
-        <Route path="/admin">
-          <Route
-            index
-            element={
-              <AdminRoute>
-                <MainDashboard />
-              </AdminRoute>
-            }
-          />
-        </Route>
-        {/* Menu utama user */}
+      {/* Menu admin */}
+      <Route path="/admin">
         <Route
-          path="/"
+          index
           element={
-            <PrivateRoute>
-              <Home />
-            </PrivateRoute>
+            <AdminRoute>
+              <MainDashboard />
+            </AdminRoute>
           }
         />
-        <Route
-          path="/riwayat"
-          element={
-            <PrivateRoute>
-              <Riwayat />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/about"
-          element={
-            <PrivateRoute>
-              <About />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/simpanan"
-          element={
-            <PrivateRoute>
-              <Simpanan />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <Profile />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/keranjang"
-          element={
-            <PrivateRoute>
-              <Keranjang />
-            </PrivateRoute>
-          }
-        />
-        {/* Detail Produk berdasarkan ID */}
-        <Route
-          path="/product/:id"
-          element={
-            <PrivateRoute>
-              <ProductDetail />
-            </PrivateRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+      </Route>
+      {/* Menu utama user */}
+      <Route
+        path="/"
+        element={
+          <PrivateRoute>
+            <Home />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/riwayat"
+        element={
+          <PrivateRoute>
+            <Riwayat />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/about"
+        element={
+          <PrivateRoute>
+            <About />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/simpanan"
+        element={
+          <PrivateRoute>
+            <Simpanan />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <Profile />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/keranjang"
+        element={
+          <PrivateRoute>
+            <Keranjang />
+          </PrivateRoute>
+        }
+      />
+      {/* Detail Produk berdasarkan ID */}
+      <Route
+        path="/product/:id"
+        element={
+          <PrivateRoute>
+            <ProductDetail />
+          </PrivateRoute>
+        }
+      />
+    </Routes>
   );
 }

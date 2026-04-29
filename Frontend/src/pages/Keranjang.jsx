@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api/axios";
+import { getCart, updateCartItem, removeFromCart } from "../api/cart";
+import { checkout } from "../api/orders";
 import BottomNav from "../components/BottomNav";
 import PaymentModal from "../components/PaymentModal";
 
@@ -9,22 +10,20 @@ export default function Keranjang() {
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Ambil keranjang dari API
   const fetchCart = async () => {
     try {
-      const dummyData = [
-        {
-          id: 1,
-          cart_id: 101,
-          nama: "Telur Ayam Kampung",
-          harga: 35000,
-          qty: 1,
-        },
-      ];
-      setCartItems(dummyData);
-      calculateTotal(dummyData);
+      setIsLoading(true);
+      const data = await getCart();
+      setCartItems(data);
+      calculateTotal(data);
     } catch (error) {
-      console.error("Gagal ambil keranjang");
+      console.error("Gagal ambil keranjang", error);
+      // Dummy fallback
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -33,7 +32,11 @@ export default function Keranjang() {
   }, []);
 
   const calculateTotal = (items) => {
-    const total = items.reduce((sum, item) => sum + item.harga * item.qty, 0);
+    const total = items.reduce((sum, item) => {
+      // Gunakan item.harga atau item.product.harga tergantung struktur API Anda
+      const harga = item.product?.harga;
+      return sum + (harga * item.kuantitas);
+    }, 0);
     setTotalPrice(total);
   };
 
@@ -46,30 +49,71 @@ export default function Keranjang() {
 
   const updateQty = async (cartId, newQty) => {
     if (newQty < 1) return removeItem(cartId);
-    const updatedCart = cartItems.map((item) =>
-      item.cart_id === cartId ? { ...item, qty: newQty } : item,
-    );
-    setCartItems(updatedCart);
-    calculateTotal(updatedCart);
+
     try {
-      // UNTUK NANTI: await api.put(`/keranjang/${cartId}`, { qty: newQty });
+      setIsLoading(true);
+      await updateCartItem(cartId, newQty);
+      const updatedCart = cartItems.map((item) =>
+        item.cart_id === cartId ? { ...item, kuantitas: newQty } : item,
+      );
+      setCartItems(updatedCart);
+      calculateTotal(updatedCart);
     } catch (error) {
-      console.error("Gagal update");
+      console.error("Gagal update qty:", error);
+      alert("Gagal update qty: " + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const removeItem = async (cartId) => {
-    const updatedCart = cartItems.filter((item) => item.cart_id !== cartId);
-    setCartItems(updatedCart);
-    calculateTotal(updatedCart);
     try {
-      // UNTUK NANTI: await api.delete(`/keranjang/${cartId}`);
+      setIsLoading(true);
+      await removeFromCart(cartId);
+      const updatedCart = cartItems.filter((item) => item.cart_id !== cartId);
+      setCartItems(updatedCart);
+      calculateTotal(updatedCart);
     } catch (error) {
-      console.error("Gagal hapus");
+      console.error("Gagal hapus item:", error);
+      alert("Gagal hapus item: " + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleCheckout = () => {
+  console.log(cartItems);
+
+
+  const handleCheckout = async (paymentMethod) => {
+    if (cartItems.length === 0) return alert("Keranjang kosong!");
+
+    try {
+      setIsLoading(true);
+      const checkoutData = {
+        items: cartItems.map(item => ({
+          product_id: item.id,
+          qty: item.kuantitas,
+          price: item.product?.harga
+        })),
+        total_price: totalPrice,
+        payment_method: paymentMethod,
+      };
+
+      const result = await checkout(checkoutData);
+      setShowPaymentModal(false);
+      setCartItems([]);
+      setTotalPrice(0);
+      alert("Checkout berhasil! Nomor pesanan: " + result.order_id);
+      navigate("/riwayat");
+    } catch (error) {
+      console.error("Gagal checkout:", error);
+      alert("Gagal checkout: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCheckoutClick = () => {
     if (cartItems.length === 0) return alert("Keranjang kosong!");
     setShowPaymentModal(true);
   };
@@ -111,29 +155,29 @@ export default function Keranjang() {
           ) : (
             cartItems.map((item) => (
               <div
-                key={item.cart_id}
+                key={item.id}
                 className="relative flex items-center gap-4 p-4 mb-4 bg-white border border-gray-100 rounded-[20px] shadow-[0_2px_15px_rgba(0,0,0,0.03)]"
               >
                 <div className="w-[72px] h-[72px] bg-[#eef2ff] rounded-[14px] flex items-center justify-center text-[#2563eb] font-bold text-[12px]">
-                  Egg
+                  <img src={item.product?.gambar} alt={item.product?.nama_produk} />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-[14px] text-gray-900 leading-tight pr-6">
-                    {item.nama}
+                    {item.product?.nama_produk}
                   </h3>
                   <p className="text-[#2563eb] font-bold text-[14px] mt-1 mb-2">
-                    {formatRupiah(item.harga)}
+                    {formatRupiah(item.product?.harga)}
                   </p>
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => updateQty(item.cart_id, item.qty - 1)}
+                      onClick={() => updateQty(item.id, item.kuantitas - 1)}
                       className="w-7 h-7 bg-gray-100 rounded-md flex items-center justify-center font-bold text-gray-600"
                     >
                       -
                     </button>
-                    <span className="font-bold text-[14px]">{item.qty}</span>
+                    <span className="font-bold text-[14px]">{item.kuantitas}</span>
                     <button
-                      onClick={() => updateQty(item.cart_id, item.qty + 1)}
+                      onClick={() => updateQty(item.id, item.kuantitas + 1)}
                       className="w-7 h-7 bg-gray-100 rounded-md flex items-center justify-center font-bold text-gray-600"
                     >
                       +
@@ -141,7 +185,7 @@ export default function Keranjang() {
                   </div>
                 </div>
                 <button
-                  onClick={() => removeItem(item.cart_id)}
+                  onClick={() => removeItem(item.id)}
                   className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition-colors"
                 >
                   <svg
@@ -163,24 +207,19 @@ export default function Keranjang() {
 
         {/* ✅ STRUK BELANJA — fixed di bawah, di atas BottomNav */}
         {cartItems.length > 0 && (
-          <div className="fixed bottom-[64px] left-1/2 -translate-x-1/2 w-full max-w-[450px] px-5 pb-3 bg-white border-t border-gray-100 z-10">
-            <div className="bg-[#f8fafc] rounded-[24px] p-5 border border-gray-100 mt-3">
-              <h3 className="font-bold text-[16px] text-gray-900 mb-4">
-                Struk Belanja
-              </h3>
+          <div className="fixed bottom-[64px] left-1/2 -translate-x-1/2 w-full max-w-[450px] px-5 pb-3 bg-white border-t border-gray-100 z-50">
+            <div className="bg-[#f8fafc] rounded-[24px] p-5 border border-gray-100 mt-3 shadow-sm">
+              <h3 className="font-bold text-[16px] text-gray-900 mb-4">Struk Belanja</h3>
 
-              {/* Rincian per barang */}
-              <div className="flex flex-col gap-2 mb-4">
+              {/* Daftar Item - Berikan max-height agar tidak menutupi layar jika item banyak */}
+              <div className="space-y-3 mb-4 max-h-[150px] overflow-y-auto pr-2">
                 {cartItems.map((item) => (
-                  <div
-                    key={item.cart_id}
-                    className="flex justify-between items-center"
-                  >
+                  <div key={item.cart_id} className="flex justify-between items-center">
                     <span className="text-gray-500 text-[14px]">
-                      {item.nama} x{item.qty}
+                      {item.product?.nama_produk} <span className="text-blue-600 font-medium">x{item.kuantitas}</span>
                     </span>
                     <span className="font-bold text-gray-800 text-[14px]">
-                      {formatRupiah(item.harga * item.qty)}
+                      {formatRupiah(item.product?.harga * item.kuantitas)}
                     </span>
                   </div>
                 ))}
@@ -188,28 +227,39 @@ export default function Keranjang() {
 
               <hr className="border-gray-200 mb-4" />
 
-              {/* Total + Tombol Checkout dalam 1 baris */}
+              {/* Total + Tombol Checkout */}
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-gray-500 text-[12px]">Total</p>
+                  <p className="text-gray-500 text-[12px]">Total Pembayaran</p>
                   <p className="font-bold text-[18px] text-[#2563eb]">
                     {formatRupiah(totalPrice)}
                   </p>
                 </div>
+
                 <button
                   onClick={handleCheckout}
-                  className="bg-[#2563eb] hover:bg-blue-700 text-white font-bold text-[15px] px-6 py-3 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-all"
+                  disabled={isLoading}
+                  className="bg-[#2563eb] hover:bg-blue-700 text-white font-bold text-[15px] px-8 py-3.5 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Checkout
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      Proses...
+                    </div>
+                  ) : (
+                    "Checkout"
+                  )}
                 </button>
               </div>
             </div>
           </div>
         )}
 
+
         <PaymentModal
           isOpen={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
+          onCheckout={handleCheckout}
           totalPrice={totalPrice}
         />
 

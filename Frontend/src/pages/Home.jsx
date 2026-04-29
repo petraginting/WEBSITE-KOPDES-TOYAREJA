@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // <-- Tambahkan import ini
-import { api } from "../api/axios";
+import { useNavigate } from "react-router-dom";
+import { getAllProducts } from "../api/products";
 import BottomNav from "../components/BottomNav";
 import logokopdes from "../assets/favnbg.png";
 
@@ -39,58 +39,19 @@ export default function Home() {
   // Kategori statis sesuai desain
   const categories = ["Semua", "Sembako", "Kebutuhan Rumah"];
 
-  // Fungsi memanggil API Laravel
+  // Fetch produk dari API
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        // Ganti '/produk-koperasi' dengan endpoint publik Laravel Anda
-        // const response = await api.get("/produk-koperasi");
-        // setProducts(response.data.data);
-
-        // --- DATA DUMMY SEMENTARA ---
-        setTimeout(() => {
-          setProducts([
-            {
-              id: 1,
-              nama: "Beras Premium",
-              harga: 75000,
-              desc: "Petani Sukamaju, Jawa...",
-              kategori: "Sembako",
-            },
-            {
-              id: 2,
-              nama: "Beras Organik",
-              harga: 85000,
-              desc: "Petani Subang, Jawa Barat",
-              kategori: "Sembako",
-            },
-            {
-              id: 3,
-              nama: "Telur Ayam Kampung",
-              harga: 35000,
-              desc: "Peternak Lokal",
-              kategori: "Kebutuhan Rumah",
-            },
-            {
-              id: 4,
-              nama: "Minyak Goreng",
-              harga: 28000,
-              desc: "Koperasi Kopdes",
-              kategori: "Sembako",
-            },
-            {
-              id: 5,
-              nama: "sunlight",
-              harga: 5000,
-              desc: "Koperasi Kopdes",
-              kategori: "Kebutuhan Rumah",
-            },
-          ]);
-          setIsLoading(false);
-        }, 500);
+        const data = await getAllProducts();
+        setProducts(data);
       } catch (error) {
         console.error("Gagal mengambil produk:", error);
+        console.log("Error response:", error.response?.data); // DEBUG: lihat error detail
+        // Fallback ke dummy data jika API error
+
+      } finally {
         setIsLoading(false);
       }
     };
@@ -101,7 +62,7 @@ export default function Home() {
   // Filter produk berdasarkan kategori dan pencarian
   const filteredProducts = products.filter((product) => {
     const matchesCategory =
-      activeCategory === "Semua" || product.kategori === activeCategory;
+      activeCategory === "Semua" || product.kategori?.toLowerCase() === activeCategory.toLowerCase();
     const matchesSearch = product.nama
       ?.toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -199,11 +160,10 @@ export default function Home() {
               <button
                 key={index}
                 onClick={() => setActiveCategory(kategori)}
-                className={`whitespace-nowrap px-5 py-2.5 rounded-full text-[14px] font-semibold transition-colors shrink-0 ${
-                  activeCategory === kategori
-                    ? "bg-[#2563eb] text-white shadow-md"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                className={`whitespace-nowrap px-5 py-2.5 rounded-full text-[14px] font-semibold transition-colors shrink-0 ${activeCategory === kategori
+                  ? "bg-[#2563eb] text-white shadow-md"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
               >
                 {kategori}
               </button>
@@ -220,15 +180,27 @@ export default function Home() {
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
-                  onClick={() => navigate(`/product/${product.id}`)} // <-- LOGIKA MENUJU DETAIL PRODUK DITAMBAHKAN DI SINI
+                  onClick={() => navigate(`/product/${product.id}`)}
                   className="bg-white border border-gray-100 rounded-[20px] p-3 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95"
                 >
-                  <div className="w-full aspect-square bg-[#e0f2fe] rounded-[14px] mb-3 overflow-hidden">
-                    {/* Gambar diletakkan di sini nanti */}
+                  {/* Container Gambar */}
+                  <div className="w-full aspect-square bg-[#e0f2fe] rounded-[14px] mb-3 overflow-hidden flex items-center justify-center">
+                    {product.gambar ? (
+                      <img
+                        src={product.gambar}
+                        alt={product.nama}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-blue-400 text-xs">No Image</span>
+                    )}
                   </div>
-                  <h3 className="font-bold text-gray-900 text-[14px] leading-tight mb-1 truncate">
+
+                  {/* Info Produk */}
+                  <h3 className="font-bold text-[14px] text-gray-800 truncate mb-1">
                     {product.nama}
                   </h3>
+
                   <p className="font-bold text-[#2563eb] text-[15px] mb-1">
                     {new Intl.NumberFormat("id-ID", {
                       style: "currency",
@@ -236,12 +208,24 @@ export default function Home() {
                       maximumFractionDigits: 0,
                     }).format(product.harga)}
                   </p>
-                  <p className="text-[11px] text-gray-400 truncate">
-                    {product.desc || "-"}
+
+                  <div className="flex justify-between items-center">
+                    <p className="text-[11px] text-gray-400 truncate">
+                      {product.unit && `${product.unit} • `}
+                      <span className={product.stok > 0 ? "text-gray-400" : "text-red-500 font-medium"}>
+                        {product.stok > 0 ? `Stok: ${product.stok}` : "Stok Habis"}
+                      </span>
+                    </p>
+                  </div>
+
+                  {/* Deskripsi Singkat */}
+                  <p className="text-[11px] text-gray-400 truncate mt-1">
+                    {product.deskripsi || product.asal || "-"}
                   </p>
                 </div>
               ))}
             </div>
+
           ) : (
             <div className="text-center py-10 text-gray-500">
               Produk tidak ditemukan.

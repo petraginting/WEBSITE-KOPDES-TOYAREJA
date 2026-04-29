@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { api } from "../api/axios";
+import { getProductById } from "../api/products";
+import { addToCart } from "../api/cart";
 import BottomNav from "../components/BottomNav";
 
 export default function ProductDetail() {
@@ -10,28 +11,19 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
-  // READ: Ambil Detail Produk
+  // Ambil detail produk dari API
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setIsLoading(true);
-        // UNTUK NANTI: const response = await api.get(`/produk/${id}`);
-        // setProduct(response.data.data);
-
-        // --- DATA DUMMY ---
-        setTimeout(() => {
-          setProduct({
-            id: id,
-            nama: "Telur Ayam Kampung",
-            harga: 35000,
-            kategori: "Protein",
-            asal: "Peternak Bogor, Jawa Barat",
-            deskripsi:
-              "Telur ayam kampung segar, kaya nutrisi dan langsung dikirim dari peternak lokal pilihan.",
-          });
-          setIsLoading(false);
-        }, 300);
+        const data = await getProductById(id);
+        console.log("Detail produk:", data); // DEBUG
+        setProduct(data);
       } catch (error) {
+        console.error("Gagal ambil detail produk:", error);
+        console.log("Error response:", error.response?.data); // DEBUG
+        // Fallback dummy data
+      } finally {
         setIsLoading(false);
       }
     };
@@ -52,15 +44,26 @@ export default function ProductDetail() {
     if (type === "plus") setQty(qty + 1);
   };
 
-  // CREATE: Simpan ke Keranjang
+  // Tambah ke keranjang
   const handleAddToCart = async () => {
+    if (product.stok <= 0) {
+      alert("Produk stok habis!");
+      return;
+    }
+    if (qty > product.stok) {
+      alert(`Stok hanya tersedia ${product.stok}`);
+      return;
+    }
     try {
-      // UNTUK NANTI: await api.post('/keranjang', { product_id: product.id, qty: qty });
+      setIsLoading(true);
+      await addToCart(product.id, qty);
       alert("Berhasil ditambahkan ke keranjang!");
       navigate("/keranjang");
     } catch (error) {
-      alert("Masuk keranjang (Simulasi)");
-      navigate("/keranjang");
+      console.error("Gagal tambah ke keranjang:", error);
+      alert("Gagal tambah ke keranjang: " + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -105,8 +108,16 @@ export default function ProductDetail() {
 
         <div className="px-5 pb-5">
           {/* Gambar Produk */}
-          <div className="w-full aspect-[4/3] bg-[#eef2ff] rounded-[24px] mb-6 flex items-center justify-center">
-            {/* <img src={product.image} className="w-full h-full object-cover rounded-[24px]" /> */}
+          <div className="w-full aspect-[4/3] bg-[#eef2ff] rounded-[24px] mb-6 flex items-center justify-center overflow-hidden">
+            {product.gambar ? (
+              <img
+                src={product.gambar}
+                alt={product.nama}
+                className="w-full h-full object-cover rounded-[24px]"
+              />
+            ) : (
+              <span className="text-gray-400">No Image</span>
+            )}
           </div>
 
           {/* Judul & Harga */}
@@ -120,12 +131,22 @@ export default function ProductDetail() {
           {/* Info Box */}
           <div className="bg-[#eff6ff] border border-blue-100 rounded-[16px] p-4 flex flex-col gap-2 mb-6">
             <div className="flex text-[14px]">
-              <span className="font-bold text-gray-800 w-20">Kategori:</span>
+              <span className="font-bold text-gray-800 w-24">Kategori:</span>
               <span className="text-gray-600">{product.kategori}</span>
             </div>
+            {product.unit && (
+              <div className="flex text-[14px]">
+                <span className="font-bold text-gray-800 w-24">Unit:</span>
+                <span className="text-gray-600">{product.unit}</span>
+              </div>
+            )}
             <div className="flex text-[14px]">
-              <span className="font-bold text-gray-800 w-20">Asal:</span>
-              <span className="text-gray-600">{product.asal}</span>
+              <span className="font-bold text-gray-800 w-24">Stok:</span>
+              <span
+                className={product.stok > 0 ? "text-green-600" : "text-red-600"}
+              >
+                {product.stok > 0 ? `${product.stok} tersedia` : "Habis"}
+              </span>
             </div>
           </div>
 
@@ -135,7 +156,7 @@ export default function ProductDetail() {
               Deskripsi Produk
             </h3>
             <p className="text-gray-500 text-[14px] leading-relaxed">
-              {product.deskripsi}
+              {product.deskripsi || "Tidak ada deskripsi"}
             </p>
           </div>
 

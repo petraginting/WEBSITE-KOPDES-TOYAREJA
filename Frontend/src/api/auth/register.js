@@ -1,0 +1,42 @@
+import { api } from "../api";
+
+var noHp = ""; // Variabel global untuk menyimpan nomor telepon selama proses OTP
+
+export const registerSendOtp = async ({ nama_lengkap, no_hp, jenis_kelamin, password }) => {
+    try {
+        const response = await api.post('/auth/register/send-otp', {
+            nama_lengkap: nama_lengkap,
+            no_hp: no_hp,
+            jenis_kelamin: jenis_kelamin,
+            password: password,
+        });
+
+        if (response.data.success) {
+            noHp = no_hp; // Simpan nomor telepon untuk digunakan saat verifikasi OTP
+            return response.data;
+
+        } else {
+            throw new Error(response.data.message);
+        }
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "Gagal mengirim OTP. Silakan coba lagi.");
+        
+    }
+}
+
+export const registerVerifyOtp = async ({ otp }) => {
+    try {
+        const response = await api.post('/auth/register/verify-otp', {
+            no_hp: noHp,
+            otp_code: otp,
+        });
+
+        if (response.data.success) {
+            return response.data;
+        } else {
+            throw new Error(response.data.message);
+        }
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "Gagal memverifikasi OTP. Silakan coba lagi.");
+    }
+}

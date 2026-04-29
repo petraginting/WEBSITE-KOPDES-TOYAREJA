@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Anggota;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -14,6 +16,13 @@ class AnggotaController extends Controller
      */
     public function semuaAnggota()
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak'
+            ], 403);
+        }
+
         $data = Anggota::with('user')
                         ->whereHas('user', function($query) {
                             $query->where('role', 'anggota');
@@ -27,27 +36,16 @@ class AnggotaController extends Controller
         ], 200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-
-    }
-
-    /**
-     * Display the specified resource.
-     */
    public function show(Anggota $anggota)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak'
+            ], 403);
+        }
+
         // Cek apakah anggota ini memiliki role 'anggota' di tabel user
         if ($anggota->user->role !== 'anggota') {
             return response()->json([
@@ -66,28 +64,63 @@ class AnggotaController extends Controller
         ], 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Anggota $anggota)
+    public function tambahAnggota(Request $request)
     {
-        //
+
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak'
+            ], 403);
+        }
+
+        $request->validate([
+            'no_hp' => 'required'
+        ]);
+
+        $user = User::where('no_hp', $request->no_hp)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'data user tidak ditemukan.'
+            ], 404);
+        }
+
+        if ($user->role === 'admin' || $user->role === 'anggota') {
+            return response()->json([
+                'success' => false,
+                'message' => 'nomor tersebut sudah terdaftar sebagai anggota'
+            ], 409);
+        }
+
+        $user->update(['role' => 'anggota']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil menambah anggota baru.',
+            'data' => $user
+        ], 201);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function updateDataAnggota(Request $request, Anggota $anggota)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak'
+            ], 403);
+        }
+        
         $request->validate([
             'nama_lengkap'       => 'sometimes|string|max:255',
             'no_registrasi'      => 'sometimes|string|unique:anggotas,no_registrasi,' . $anggota->id,
             'nik'                => 'sometimes|string|size:16|unique:anggotas,nik,' . $anggota->id,
             'jenis_kelamin'      => 'sometimes|in:laki-laki,perempuan',
-            'tanggal_lahir'      => 'sometimes|date',
+            'tanggal_lahir'      => 'sometimes|nullable|date',
             'alamat'             => 'sometimes|string',
             'pekerjaan'          => 'sometimes|string',
-            'tanggal_bergabung'  => 'sometimes|date',
+            'tanggal_bergabung'  => 'sometimes|nullable|date',
             'status_keanggotaan' => 'sometimes|in:aktif,tidak_aktif',
         ]);
 

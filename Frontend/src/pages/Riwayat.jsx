@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api } from "../api/axios";
+import { getUserOrders } from "../api/orders";
 import BottomNav from "../components/BottomNav";
 
 export default function Riwayat() {
@@ -9,52 +9,49 @@ export default function Riwayat() {
   // State untuk mengontrol Modal Detail Struk
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // Fungsi memanggil API Laravel
+  // Ambil riwayat pesanan dari API
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         setIsLoading(true);
-        // UNTUK NANTI: const response = await api.get('/riwayat-pembelian');
-        // setOrders(response.data.data);
-
-        // --- DATA DUMMY SEMENTARA ---
-        setTimeout(() => {
-          setOrders([
-            {
-              id: "ORD-1776826638603",
-              date: "22 Apr 2026, 09.57",
-              total: 35000,
-              method: "Cash on Delivery",
-              status: "Selesai",
-              points: 35000,
-              items: [{ nama: "Telur Ayam Kampung", qty: 1, harga: 35000 }],
-            },
-            {
-              id: "ORD-1776599555983",
-              date: "19 April 2026, 18.52",
-              total: 90000,
-              method: "QRIS",
-              status: "Selesai",
-              points: 1000,
-              items: [
-                { nama: "Beras Premium 5Kg", qty: 1, harga: 75000 },
-                { nama: "Gula Pasir 1Kg", qty: 1, harga: 15000 },
-              ],
-            },
-            {
-              id: "ORD-1776599532112",
-              date: "19 April 2026, 18.52",
-              total: 28000,
-              method: "Cash on Delivery",
-              status: "Diproses",
-              points: 0,
-              items: [{ nama: "Minyak Goreng 2L", qty: 1, harga: 28000 }],
-            },
-          ]);
-          setIsLoading(false);
-        }, 500);
+        const data = await getUserOrders();
+        setOrders(data);
       } catch (error) {
         console.error("Gagal mengambil data riwayat:", error);
+        // Dummy fallback
+        setOrders([
+          {
+            id: "ORD-1776826638603",
+            date: "22 Apr 2026, 09.57",
+            total: 35000,
+            method: "Cash on Delivery",
+            status: "Selesai",
+            points: 35000,
+            items: [{ nama: "Telur Ayam Kampung", qty: 1, harga: 35000 }],
+          },
+          {
+            id: "ORD-1776599555983",
+            date: "19 April 2026, 18.52",
+            total: 90000,
+            method: "QRIS",
+            status: "Selesai",
+            points: 1000,
+            items: [
+              { nama: "Beras Premium 5Kg", qty: 1, harga: 75000 },
+              { nama: "Gula Pasir 1Kg", qty: 1, harga: 15000 },
+            ],
+          },
+          {
+            id: "ORD-1776599532112",
+            date: "19 April 2026, 18.52",
+            total: 28000,
+            method: "Cash on Delivery",
+            status: "Diproses",
+            points: 0,
+            items: [{ nama: "Minyak Goreng 2L", qty: 1, harga: 28000 }],
+          },
+        ]);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -116,31 +113,31 @@ export default function Riwayat() {
                       <h2 className="font-bold text-gray-900 text-[15px] mb-0.5">
                         {order.id}
                       </h2>
-                      <p className="text-gray-500 text-[12px]">{order.date}</p>
+                      <p className="text-gray-500 text-[12px]">{order.created_at}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
                       <span className="px-3 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-600">
-                        {order.method === "Cash on Delivery"
+                        {order.metode_pembayaran === "cod"
                           ? "COD"
-                          : order.method}
+                          : order.metode_pembayaran}
                       </span>
                       <span
                         className={`px-3 py-0.5 rounded-full text-[10px] font-medium ${getStatusStyle(order.status)}`}
                       >
-                        {order.status}
+                        {order.status_pesanan}
                       </span>
                     </div>
                   </div>
 
                   <p className="text-gray-600 text-[13px] mb-3">
-                    {order.items.length} item
+                    {order.details?.length} item
                   </p>
                   <hr className="border-gray-100 my-3" />
 
                   <div className="flex justify-between items-center mt-1">
                     <span className="text-gray-500 text-[13px]">Total</span>
                     <span className="font-bold text-[#1e3a8a] text-[16px]">
-                      {formatRupiah(order.total)}
+                      {formatRupiah(order.total_harga)}
                     </span>
                   </div>
                 </div>
@@ -211,7 +208,7 @@ export default function Riwayat() {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500 text-[13px]">Tanggal</span>
                   <span className="font-bold text-[#1e293b] text-[13px]">
-                    {selectedOrder.date}
+                    {selectedOrder.created_at}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -219,7 +216,7 @@ export default function Riwayat() {
                     Metode Pembayaran
                   </span>
                   <span className="font-bold text-[#1e293b] text-[13px]">
-                    {selectedOrder.method}
+                    {selectedOrder.metode_pembayaran}
                   </span>
                 </div>
               </div>
@@ -232,18 +229,18 @@ export default function Riwayat() {
                   Item Pembelian
                 </h4>
                 <div className="flex flex-col gap-4">
-                  {selectedOrder.items.map((item, idx) => (
+                  {selectedOrder.details?.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-start">
                       <div className="flex flex-col">
                         <span className="font-bold text-[#1e293b] text-[14px] mb-0.5">
-                          {item.nama}
+                          {item.product?.nama_produk}
                         </span>
                         <span className="text-gray-400 text-[12px]">
-                          {item.qty} x {formatRupiah(item.harga)}
+                          {item.jumlah} x {formatRupiah(item.product?.harga)}
                         </span>
                       </div>
                       <span className="font-bold text-[#1e293b] text-[14px]">
-                        {formatRupiah(item.qty * item.harga)}
+                        {formatRupiah(item.jumlah * item.product?.harga)}
                       </span>
                     </div>
                   ))}
@@ -258,11 +255,11 @@ export default function Riwayat() {
                   Total
                 </span>
                 <span className="font-bold text-blue-600 text-[18px]">
-                  {formatRupiah(selectedOrder.total)}
+                  {formatRupiah(selectedOrder.total_harga)}
                 </span>
               </div>
 
-              {selectedOrder.points > 0 && (
+              {selectedOrder.poin > 0 && (
                 <div className="bg-[#fffcf0] border border-yellow-200 rounded-[14px] p-4 flex justify-between items-center mb-8">
                   <span className="font-bold text-[#92400e] text-[14px]">
                     Poin yang didapat

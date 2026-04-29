@@ -1,44 +1,23 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import { useAnggota } from "../context/AnggotaContext";
 
 export default function AnggotaContent() {
-  // 1. State Utama untuk Data
-  const [members, setMembers] = useState([
-    {
-      id: 1,
-      nomorRegistrasi: "01",
-      nomorAnggota: "#A001",
-      namaLengkap: "Budi Santoso",
-      nomorKTP: "3201234567890001",
-      nomorTelepon: "081234567890",
-      tanggalLahir: "1985-04-15",
-      alamatLengkap: "Jl. Merdeka No.12, Desa Makmur",
-      jenisKelamin: "Laki-laki",
-      pekerjaan: "Petani",
-      tanggalBergabung: "2020-01-01",
-      status: "Aktif",
-    },
-    {
-      id: 2,
-      nomorRegistrasi: "02",
-      nomorAnggota: "#A002",
-      namaLengkap: "Siti Rahayu",
-      nomorKTP: "3201234567890002",
-      nomorTelepon: "087654321098",
-      tanggalLahir: "1988-08-20",
-      alamatLengkap: "Jl. Raya No.5, Desa Makmur",
-      jenisKelamin: "Perempuan",
-      pekerjaan: "Pedagang",
-      tanggalBergabung: "2020-03-15",
-      status: "Non-Aktif",
-    },
-  ]);
+
+  const {
+    anggotaList,
+    getAnggotaById,
+    selectedAnggota,
+    tambahAnggota,
+    updateAnggota
+  } = useAnggota();
+
+  const members = anggotaList
 
   // 2. State untuk Kontrol UI
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isModalDetailOpen, setIsModalDetailOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedMember, setSelectedMember] = useState(null);
 
   // 3. State untuk Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,24 +31,39 @@ export default function AnggotaContent() {
     nomorTelepon: "",
     tanggalLahir: "",
     alamatLengkap: "",
-    jenisKelamin: "Laki-laki",
+    jenisKelamin: "",
     pekerjaan: "",
     tanggalBergabung: "",
-    status: "Aktif",
+    status: "",
   };
   const [formData, setFormData] = useState(initialFormState);
 
+  const normalizedMembers = members.map((item) => ({
+    id: item.id,
+    namaLengkap: item.nama_lengkap,
+    nomorRegistrasi: item.no_registrasi,
+    nomorKTP: item.nik,
+    jenisKelamin: item.jenis_kelamin,
+    nomorTelepon: item.user?.no_hp || "-",
+    alamatLengkap: item.alamat || "-",
+    tanggalLahir: item.tanggal_lahir || null,
+    tanggalBergabung: item.tanggal_bergabung || null,
+    status: item.status_keanggotaan,
+  }));
+
+
   // LOGIKA SEARCH & FILTER
-  const filteredMembers = members.filter((member) => {
+  const filteredMembers = normalizedMembers.filter((member) => {
     // Cek Search (Nama, No. Anggota, atau No. Telepon)
     const matchSearch =
-      member.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.nomorAnggota.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.nomorTelepon.includes(searchTerm);
+      member.namaLengkap?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.nomorRegistrasi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.nomorTelepon?.includes(searchTerm);
 
     // Cek Filter Status
     const matchStatus =
-      filterStatus === "Semua Status" || member.status === filterStatus;
+      filterStatus === "Semua Status" ||
+      member.status?.toLowerCase() === filterStatus.toLowerCase();
 
     return matchSearch && matchStatus;
   });
@@ -80,31 +74,53 @@ export default function AnggotaContent() {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSave = () => {
-    if (isEditing) {
-      setMembers(
-        members.map((m) => (m.id === formData.id ? { ...formData } : m)),
-      );
-    } else {
-      const newMember = {
-        ...formData,
-        id: Date.now(),
-        nomorAnggota: `#A${String(members.length + 1).padStart(3, "0")}`,
-      };
-      setMembers([...members, newMember]);
+  const handleSave = async () => {
+
+    try {
+      if (isEditing) {
+        if (
+          formData.namaLengkap === '' || formData.nomorRegistrasi === '' ||
+          formData.namaLengkap === null || formData.nomorRegistrasi === null
+        ) {
+          alert("Nama atau no registrasi tidak boleh kosong")
+        } else {
+          await updateAnggota(formData.id, {
+            nama_lengkap: formData.namaLengkap,
+            no_registrasi: formData.nomorRegistrasi,
+            nik: formData?.nomorKTP?.toString(),
+            tanggal_lahir: formData.tanggalLahir || null,
+            alamat: formData.alamatLengkap,
+            jenis_kelamin: formData.jenisKelamin,
+            pekerjaan: formData.pekerjaan,
+            tanggal_bergabung: formData.tanggalBergabung || null,
+            status_keanggotaan: formData.status
+          })
+
+          closeFormModal();
+        }
+      } else {
+        if (formData.nomorTelepon === '') {
+          alert('Nomor hp harus diisi!')
+          return
+        }
+        await tambahAnggota(formData.nomorTelepon);
+        closeFormModal();
+      }
+
+    } catch (error) {
+      alert(error.message)
     }
-    closeFormModal();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus anggota ini?")) {
-      setMembers(members.filter((m) => m.id !== id));
-    }
-  };
+  // const handleDelete = (id) => {
+  //   if (window.confirm("Apakah Anda yakin ingin menghapus anggota ini?")) {
+  //     setMembers(members.filter((m) => m.id !== id));
+  //   }
+  // };
 
   const openEditModal = (member) => {
     setIsEditing(true);
-    setFormData(member);
+    setFormData({ ...member });
     setIsFormModalOpen(true);
   };
 
@@ -119,8 +135,8 @@ export default function AnggotaContent() {
     setFormData(initialFormState);
   };
 
-  const openDetailModal = (member) => {
-    setSelectedMember(member);
+  const openDetailModal = async (id) => {
+    await getAnggotaById(id)
     setIsModalDetailOpen(true);
   };
 
@@ -157,7 +173,7 @@ export default function AnggotaContent() {
         >
           <option value="Semua Status">Semua Status</option>
           <option value="Aktif">Aktif</option>
-          <option value="Non-Aktif">Non-Aktif</option>
+          <option value="Tidak_Aktif">Tidak-Aktif</option>
         </select>
         <button className="bg-blue-50 text-blue-700 border border-border px-[18px] py-[9px] rounded-[12px] text-[13px] font-semibold hover:bg-blue-100 transition-all flex items-center gap-[6px]">
           Filter
@@ -178,7 +194,6 @@ export default function AnggotaContent() {
           <table className="w-full border-collapse text-[13.5px]">
             <thead>
               <tr className="bg-blue-50 text-mid font-semibold text-[12px] tracking-[0.3px]">
-                <th className="px-[16px] py-[12px] text-left">No. Anggota</th>
                 <th className="px-[16px] py-[12px] text-left">
                   No. Registrasi
                 </th>
@@ -199,38 +214,34 @@ export default function AnggotaContent() {
                     key={member.id}
                     className="hover:bg-blue-50 transition-colors border-b border-blue-50 last:border-none"
                   >
-                    <td className="px-[16px] py-[13px] text-dark font-bold">
-                      {member.nomorAnggota}
-                    </td>
                     <td className="px-[16px] py-[13px] text-dark">
-                      {member.nomorRegistrasi}
+                      {member.nomorRegistrasi || '-'}
                     </td>
                     <td className="px-[16px] py-[13px] text-dark">
                       {member.namaLengkap}
                     </td>
                     <td className="px-[16px] py-[13px] text-dark truncate max-w-[150px]">
-                      {member.alamatLengkap}
+                      {member.alamatLengkap || '-'}
                     </td>
                     <td className="px-[16px] py-[13px] text-dark">
                       {member.nomorTelepon}
                     </td>
                     <td className="px-[16px] py-[13px] text-dark">
-                      {member.tanggalBergabung}
+                      {member.tanggalBergabung || '-'}
                     </td>
                     <td className="px-[16px] py-[13px]">
                       <span
-                        className={`inline-flex items-center gap-[4px] px-[10px] py-[3px] rounded-[20px] text-[11px] font-semibold before:content-['●'] before:text-[8px] ${
-                          member.status === "Aktif"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-[#f3f4f6] text-[#6b7280]"
-                        }`}
+                        className={`inline-flex items-center gap-[4px] px-[10px] py-[3px] rounded-[20px] text-[11px] font-semibold before:content-['●'] before:text-[8px] ${member.status === "Aktif"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-[#f3f4f6] text-[#6b7280]"
+                          }`}
                       >
                         {member.status}
                       </span>
                     </td>
                     <td className="px-[16px] py-[13px] flex gap-[6px]">
                       <button
-                        onClick={() => openDetailModal(member)}
+                        onClick={() => openDetailModal(member.id)}
                         className="bg-blue-50 text-blue-700 border border-border px-[12px] py-[6px] rounded-[12px] text-[12px] font-semibold hover:bg-blue-100"
                       >
                         Detail
@@ -242,7 +253,7 @@ export default function AnggotaContent() {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(member.id)}
+                        // onClick={() => handleDelete(member.id)}
                         className="bg-[#fee2e2] text-[#991b1b] border border-[#fecaca] px-[12px] py-[6px] rounded-[12px] text-[12px] font-semibold hover:bg-[#fecaca]"
                       >
                         Hapus
@@ -253,7 +264,7 @@ export default function AnggotaContent() {
               ) : (
                 <tr>
                   <td colSpan="8" className="text-center py-6 text-light">
-                    Data tidak ditemukan...
+                    Data anggota kosong
                   </td>
                 </tr>
               )}
@@ -303,57 +314,12 @@ export default function AnggotaContent() {
               onClick={handleSave}
               className="bg-gradient-to-br from-blue-700 to-blue-500 text-white px-[18px] py-[9px] rounded-[12px] text-[13px] font-semibold shadow-md hover:-translate-y-[1px]"
             >
-              {isEditing ? "💾 Simpan Perubahan" : "💾 Simpan Anggota"}
+              {isEditing ? "💾 Simpan Perubahan" : "💾 Tambah Anggota"}
             </button>
           </>
         }
       >
-        <div className="grid grid-cols-2 gap-[16px] mb-[16px]">
-          <div>
-            <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              Nama Lengkap
-            </label>
-            <input
-              name="namaLengkap"
-              value={formData.namaLengkap}
-              onChange={handleInputChange}
-              type="text"
-              placeholder="Masukkan nama lengkap"
-              className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              Nomor Registrasi
-            </label>
-            <input
-              name="nomorRegistrasi"
-              value={formData.nomorRegistrasi}
-              onChange={handleInputChange}
-              type="text"
-              placeholder="Contoh: 01"
-              className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
-            />
-          </div>
-          <div className="col-span-full">
-            <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              Nomor KTP
-            </label>
-            <input
-              name="nomorKTP"
-              value={formData.nomorKTP}
-              onChange={handleInputChange}
-              type="text"
-              maxLength={16}
-              onInput={(e) => {
-                e.target.value = e.target.value.replace(/[^0-9]/g, "");
-              }}
-              placeholder="16 digit NIK"
-              className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-[16px] mb-[16px]">
+        {!isEditing ?
           <div>
             <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
               No. Telepon
@@ -367,120 +333,166 @@ export default function AnggotaContent() {
               className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
             />
           </div>
-          <div>
-            <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              Tanggal Lahir
-            </label>
-            <input
-              name="tanggalLahir"
-              value={formData.tanggalLahir}
-              onChange={handleInputChange}
-              type="date"
-              className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
-            />
-          </div>
-        </div>
-        <div className="mb-[16px]">
-          <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-            Alamat Lengkap
-          </label>
-          <textarea
-            name="alamatLengkap"
-            value={formData.alamatLengkap}
-            onChange={handleInputChange}
-            placeholder="Jl. ... No. ..., Desa ..., Kecamatan ..."
-            className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white min-h-[80px] resize-y"
-          ></textarea>
-        </div>
-        <div className="grid grid-cols-2 gap-[16px] mb-[16px]">
-          <div>
-            <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              Jenis Kelamin
-            </label>
-            <select
-              name="jenisKelamin"
-              value={formData.jenisKelamin}
-              onChange={handleInputChange}
-              className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white cursor-pointer"
-            >
-              <option value="Laki-laki">Laki-laki</option>
-              <option value="Perempuan">Perempuan</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              Pekerjaan
-            </label>
-            <input
-              name="pekerjaan"
-              value={formData.pekerjaan}
-              onChange={handleInputChange}
-              type="text"
-              placeholder="Petani / Pedagang / dll"
-              className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-[16px]">
-          <div>
-            <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              Tanggal Bergabung
-            </label>
-            <input
-              name="tanggalBergabung"
-              value={formData.tanggalBergabung}
-              onChange={handleInputChange}
-              type="date"
-              className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
-              Status Keanggotaan
-            </label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white cursor-pointer"
-            >
-              <option value="Aktif">Aktif</option>
-              <option value="Non-Aktif">Non-Aktif</option>
-            </select>
-          </div>
-        </div>
+          : (
+            <>
+              <div className="grid grid-cols-2 gap-[16px] mb-[16px]">
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                    Nama Lengkap
+                  </label>
+                  <input
+                    name="namaLengkap"
+                    value={formData.namaLengkap}
+                    onChange={handleInputChange}
+                    type="text"
+                    placeholder="Masukkan nama lengkap"
+                    className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                    Nomor Registrasi
+                  </label>
+                  <input
+                    name="nomorRegistrasi"
+                    value={formData.nomorRegistrasi}
+                    onChange={handleInputChange}
+                    type="text"
+                    placeholder="Contoh: 01"
+                    className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
+                  />
+                </div>
+                <div className="col-span-full">
+                  <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                    Nomor KTP
+                  </label>
+                  <input
+                    name="nomorKTP"
+                    value={formData.nomorKTP}
+                    onChange={handleInputChange}
+                    type="text"
+                    maxLength={16}
+                    onInput={(e) => {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, "");
+                    }}
+                    placeholder="16 digit NIK"
+                    className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-[16px] mb-[16px]">
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                    No. Telepon
+                  </label>
+                  <input
+                    name="nomorTelepon"
+                    value={formData.nomorTelepon}
+                    onChange={handleInputChange}
+                    type="text"
+                    placeholder="08xx-xxxx-xxxx"
+                    className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                    Tanggal Lahir
+                  </label>
+                  <input
+                    name="tanggalLahir"
+                    value={formData.tanggalLahir}
+                    onChange={handleInputChange}
+                    type="date"
+                    className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
+                  />
+                </div>
+              </div>
+              <div className="mb-[16px]">
+                <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                  Alamat Lengkap
+                </label>
+                <textarea
+                  name="alamatLengkap"
+                  value={formData.alamatLengkap}
+                  onChange={handleInputChange}
+                  placeholder="Jl. ... No. ..., Desa ..., Kecamatan ..."
+                  className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white min-h-[80px] resize-y"
+                ></textarea>
+              </div>
+              <div className="grid grid-cols-2 gap-[16px] mb-[16px]">
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                    Jenis Kelamin
+                  </label>
+                  <select
+                    name="jenisKelamin"
+                    value={formData.jenisKelamin}
+                    onChange={handleInputChange}
+                    className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white cursor-pointer"
+                  >
+                    <option value="laki-laki">Laki-laki</option>
+                    <option value="perempuan">Perempuan</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                    Pekerjaan
+                  </label>
+                  <input
+                    name="pekerjaan"
+                    value={formData.pekerjaan}
+                    onChange={handleInputChange}
+                    type="text"
+                    placeholder="Petani / Pedagang / dll"
+                    className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-[16px]">
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                    Tanggal Bergabung
+                  </label>
+                  <input
+                    name="tanggalBergabung"
+                    value={formData.tanggalBergabung}
+                    onChange={handleInputChange}
+                    type="date"
+                    className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-mid mb-[6px]">
+                    Status Keanggotaan
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="w-full border border-border rounded-[12px] px-[13px] py-[9px] text-[13.5px] outline-none focus:border-blue-400 bg-white cursor-pointer"
+                  >
+                    <option value="aktif">Aktif</option>
+                    <option value="tidak_aktif">Tidak Aktif</option>
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
       </Modal>
+
 
       {/*  MODAL DETAIL LENGKAP  */}
       <Modal
         isOpen={isModalDetailOpen}
         onClose={() => setIsModalDetailOpen(false)}
         title={
-          selectedMember
-            ? `👤 Detail Anggota — ${selectedMember.nomorAnggota}`
+          selectedAnggota
+            ? `👤 Detail Anggota — ${selectedAnggota.no_registrasi}`
             : ""
         }
-        footer={
-          <>
-            <button
-              onClick={() => setIsModalDetailOpen(false)}
-              className="bg-blue-50 text-blue-700 border border-border px-[18px] py-[9px] rounded-[12px] text-[13px] font-semibold hover:bg-blue-100"
-            >
-              Tutup
-            </button>
-            <button
-              onClick={() => {
-                setIsModalDetailOpen(false);
-                openEditModal(selectedMember);
-              }}
-              className="bg-gradient-to-br from-blue-700 to-blue-500 text-white px-[18px] py-[9px] rounded-[12px] text-[13px] font-semibold hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(37,99,235,0.35)] transition-all"
-            >
-              ✏️ Edit Data
-            </button>
-          </>
-        }
+
       >
-        {selectedMember && (
+        {selectedAnggota && (
           <>
             <div className="bg-blue-50 rounded-[12px] p-[20px] mb-[20px] flex items-center gap-[16px]">
               <div className="w-[60px] h-[60px] bg-gradient-to-br from-blue-500 to-blue-400 rounded-[14px] flex items-center justify-center text-[28px] text-white shadow-sm">
@@ -488,19 +500,18 @@ export default function AnggotaContent() {
               </div>
               <div>
                 <div className="text-[18px] font-bold text-dark">
-                  {selectedMember.namaLengkap}
+                  {selectedAnggota.nama_lengkap}
                 </div>
                 <div className="text-[12px] text-light mt-[2px]">
-                  No. Registrasi: {selectedMember.nomorRegistrasi}
+                  No. Registrasi: {selectedAnggota.no_registrasi}
                 </div>
                 <span
-                  className={`inline-flex items-center gap-[4px] px-[10px] py-[3px] rounded-[20px] text-[11px] font-semibold before:content-['●'] before:text-[8px] mt-[6px] ${
-                    selectedMember.status === "Aktif"
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-[#f3f4f6] text-[#6b7280]"
-                  }`}
+                  className={`inline-flex items-center gap-[4px] px-[10px] py-[3px] rounded-[20px] text-[11px] font-semibold before:content-['●'] before:text-[8px] mt-[6px] ${selectedAnggota.status === "Aktif"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-[#f3f4f6] text-[#6b7280]"
+                    }`}
                 >
-                  {selectedMember.status}
+                  {selectedAnggota.status_keanggotaan}
                 </span>
               </div>
             </div>
@@ -512,50 +523,55 @@ export default function AnggotaContent() {
                     Alamat Lengkap
                   </td>
                   <td className="py-[8px] text-dark font-medium">
-                    {selectedMember.alamatLengkap || "-"}
+                    {selectedAnggota.alamat || "-"}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="text-light py-[8px]">No. Telepon</td>
                   <td className="py-[8px] text-dark font-medium">
-                    {selectedMember.nomorTelepon || "-"}
+                    {selectedAnggota.user?.no_hp || "-"}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="text-light py-[8px]">No. KTP</td>
                   <td className="py-[8px] text-dark font-medium">
-                    {selectedMember.nomorKTP || "-"}
+                    {selectedAnggota.nik || "-"}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="text-light py-[8px]">Jenis Kelamin</td>
                   <td className="py-[8px] text-dark font-medium">
-                    {selectedMember.jenisKelamin || "-"}
+                    {selectedAnggota.jenis_kelamin || "-"}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="text-light py-[8px]">Tanggal Lahir</td>
                   <td className="py-[8px] text-dark font-medium">
-                    {selectedMember.tanggalLahir || "-"}
+                    {selectedAnggota.tanggal_lahir || "-"}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="text-light py-[8px]">Pekerjaan</td>
                   <td className="py-[8px] text-dark font-medium">
-                    {selectedMember.pekerjaan || "-"}
+                    {selectedAnggota.pekerjaan || "-"}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="text-light py-[8px]">Tgl. Bergabung</td>
                   <td className="py-[8px] text-dark font-medium">
-                    {selectedMember.tanggalBergabung || "-"}
+                    {selectedAnggota.tanggal_bergabung || "-"}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="text-light py-[8px]">Total Simpanan</td>
                   <td className="py-[8px]">
-                    <strong className="text-blue-600">Rp 2.100.000</strong>{" "}
-                    <span className="text-[10px] text-light">(Dummy)</span>
+                    <strong className="text-blue-600">Rp {selectedAnggota.total_simpanan}</strong>{" "}
+                  </td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="text-light py-[8px]">Total Poin</td>
+                  <td className="py-[8px]">
+                    <strong className="text-blue-500">{selectedAnggota.poin}</strong>
                   </td>
                 </tr>
                 <tr>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 // Pastikan path import API ini sesuai dengan folder Anda (seperti di VerifyRegist sebelumnya)
-import { api } from "../api/axios";
+import { api } from "../api/api";
+import { createPortal } from "react-dom";
 
 export default function PesananContent() {
   // 1. STATE UNTUK API & MODAL
@@ -11,16 +12,11 @@ export default function PesananContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua Status");
 
-  // 2. MENGAMBIL DATA DARI BACKEND (READ)
-  useEffect(() => {
-    fetchDataPesanan();
-  }, []);
-
   const fetchDataPesanan = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get("/pesanan");
-      setPesananList(response.data);
+      const response = await api.get("/admin/pesanan");
+      setPesananList(response.data.data);
     } catch (error) {
       console.error("Gagal mengambil data:", error);
       alert("Gagal memuat data pesanan dari server.");
@@ -29,16 +25,21 @@ export default function PesananContent() {
     }
   };
 
+  useEffect(() => {
+    fetchDataPesanan();
+  }, []);
+
+
   // 3. LOGIKA CRUD KE BACKEND
 
   // Update Status API
   const handleUpdateStatus = async (id, newStatus) => {
     try {
-      await api.patch(`/pesanan/${id}/status`, { status: newStatus });
+      await api.put(`/admin/pesanan/update-status/${id}`, { status_pesanan: newStatus });
 
       // Jika berhasil di backend, update tampilan di frontend
       const updated = pesananList.map((item) =>
-        item.id === id ? { ...item, status: newStatus } : item,
+        item.id === id ? { ...item, status_pesanan: newStatus } : item,
       );
       setPesananList(updated);
     } catch (error) {
@@ -65,25 +66,26 @@ export default function PesananContent() {
   // FILTER & SEARCH
   const filteredPesanan = pesananList.filter((item) => {
     // Tambahkan pengaman (opsional) jika data dari backend ada yang null
-    const name = item.name || "";
-    const orderId = item.orderId || "";
+    const name = item.user?.anggota?.nama_lengkap || "";
+    const orderId = item.id || "";
 
     const matchesSearch =
       name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       orderId.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
-      statusFilter === "Semua Status" || item.status === statusFilter;
+      statusFilter === "Semua Status" || item.status_pesanan.toLowerCase() === statusFilter.toLowerCase();
+
 
     return matchesSearch && matchesStatus;
   });
 
   // HITUNG STATS OTOMATIS
   const stats = {
-    menunggu: pesananList.filter((p) => p.status === "Menunggu").length,
-    diproses: pesananList.filter((p) => p.status === "Diproses").length,
-    selesai: pesananList.filter((p) => p.status === "Selesai").length,
-    batal: pesananList.filter((p) => p.status === "Dibatalkan").length,
+    pending: pesananList.filter((p) => p.status_pesanan === "pending").length,
+    diproses: pesananList.filter((p) => p.status_pesanan === "diproses").length,
+    selesai: pesananList.filter((p) => p.status_pesanan === "selesai").length,
+    batal: pesananList.filter((p) => p.status_pesanan === "dibatalkan").length,
   };
 
   return (
@@ -92,8 +94,8 @@ export default function PesananContent() {
       <div className="grid grid-cols-4 gap-4 mb-7">
         <StatCardPesanan
           icon="⏳"
-          value={stats.menunggu}
-          label="Menunggu"
+          value={stats.pending}
+          label="Pending"
           colorClass="from-amber-500 to-amber-300"
         />
         <StatCardPesanan
@@ -135,7 +137,7 @@ export default function PesananContent() {
           className="border border-border rounded-xl py-2.5 px-3 text-[13px] text-dark bg-white outline-none cursor-pointer"
         >
           <option>Semua Status</option>
-          <option>Menunggu</option>
+          <option>Pending</option>
           <option>Diproses</option>
           <option>Selesai</option>
           <option>Dibatalkan</option>
@@ -156,10 +158,7 @@ export default function PesananContent() {
                   Anggota
                 </th>
                 <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
-                  Produk
-                </th>
-                <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
-                  Qty
+                  Jumlah Produk
                 </th>
                 <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
                   Total
@@ -167,7 +166,7 @@ export default function PesananContent() {
                 <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
                   Status
                 </th>
-                <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left text-center">
+                <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-center">
                   Aksi
                 </th>
               </tr>
@@ -212,6 +211,13 @@ export default function PesananContent() {
   );
 }
 
+const statusStyles = {
+  selesai: "bg-emerald-100 text-emerald-700",
+  diproses: "bg-blue-100 text-blue-700",
+  pending: "bg-amber-100 text-amber-700",
+  dibatalkan: "bg-red-100 text-red-700",
+};
+
 // --- SUB-KOMPONEN ---
 
 function StatCardPesanan({ icon, value, label, colorClass }) {
@@ -229,6 +235,7 @@ function StatCardPesanan({ icon, value, label, colorClass }) {
 
 // Tambahkan prop onDetailClick di sini
 function TableRow({ data, onUpdateStatus, onDelete, onDetailClick }) {
+
   const formatIDR = (val) =>
     new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -236,39 +243,31 @@ function TableRow({ data, onUpdateStatus, onDelete, onDetailClick }) {
       minimumFractionDigits: 0,
     }).format(val);
 
-  const statusStyles = {
-    Selesai: "bg-emerald-100 text-emerald-700",
-    Diproses: "bg-blue-100 text-blue-700",
-    Menunggu: "bg-amber-100 text-amber-700",
-    Dibatalkan: "bg-red-100 text-red-700",
-  };
-
   return (
     <tr className="hover:bg-blue-50/50 border-b border-border last:border-none transition-colors">
-      <td className="px-4 py-3 text-dark font-bold">{data.orderId}</td>
-      <td className="px-4 py-3 text-dark">{data.name}</td>
-      <td className="px-4 py-3 text-dark">{data.product}</td>
-      <td className="px-4 py-3 text-dark">{data.qty}</td>
+      <td className="px-4 py-3 text-dark font-bold">{data.id}</td>
+      <td className="px-4 py-3 text-dark">{data.user?.anggota?.nama_lengkap}</td>
+      <td className="px-4 py-3 text-dark">{data.details?.length}</td>
       <td className="px-4 py-3 text-dark font-medium">
-        {formatIDR(data.total)}
+        {formatIDR(data.total_harga)}
       </td>
       <td className="px-4 py-3">
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusStyles[data.status]}`}
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusStyles[data.status_pesanan]}`}
         >
-          ● {data.status}
+          ● {data.status_pesanan}
         </span>
       </td>
       <td className="px-4 py-3 flex gap-2 justify-center items-center">
         <select
           className="text-[11px] border rounded p-1 outline-none"
-          value={data.status}
+          value={data.status_pesanan}
           onChange={(e) => onUpdateStatus(data.id, e.target.value)}
         >
-          <option value="Menunggu">Menunggu</option>
-          <option value="Diproses">Diproses</option>
-          <option value="Selesai">Selesai</option>
-          <option value="Dibatalkan">Batal</option>
+          <option value="pending">Pending</option>
+          <option value="diproses">Diproses</option>
+          <option value="selesai">Selesai</option>
+          <option value="dibatalkan">Batal</option>
         </select>
 
         {/* Tombol Detail Ditambahkan di Sini */}
@@ -312,7 +311,7 @@ function DetailModal({ data, onClose }) {
       try {
         // Sesuaikan endpoint ini dengan route 'show' di web.php / api.php Laravel Anda
         // Contoh: Route::get('/detail-pesanan/{pesanan_id}', [DetailPesananController::class, 'show']);
-        const response = await api.get(`/detail-pesanan/${data.id}`);
+        const response = await api.get(`/pesanan/${data.id}`);
 
         // Mengambil array dari response JSON Laravel: 'data' => $details
         setDetailItems(response.data.data);
@@ -329,107 +328,110 @@ function DetailModal({ data, onClose }) {
   }, [data]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl animate-fadeInUp p-6 max-h-[90vh] flex flex-col">
-        {/* HEADER MODAL */}
-        <div className="flex justify-between items-center border-b pb-4 mb-4">
-          <div>
-            <h2 className="text-xl font-bold text-dark">Detail Pesanan</h2>
-            <p className="text-sm text-gray-500">#{data.orderId || data.id}</p>
+    createPortal(
+      <div className="fixed inset-0 z-[999] flex justify-center items-start overflow-y-auto pt-10 pb-10 backdrop-blur-md bg-black/40">
+        <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl animate-fadeInUp p-6 max-h-[90vh] flex flex-col">
+          {/* HEADER MODAL */}
+          <div className="flex justify-between items-center border-b pb-4 mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-dark">Detail Pesanan</h2>
+              <p className="text-sm text-gray-500">#{data.orderId || data.id}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:bg-red-50 hover:text-red-500 w-8 h-8 rounded-full flex items-center justify-center text-2xl transition-all"
+            >
+              ×
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:bg-red-50 hover:text-red-500 w-8 h-8 rounded-full flex items-center justify-center text-2xl transition-all"
-          >
-            ×
-          </button>
-        </div>
 
-        {/* INFO PELANGGAN */}
-        <div className="grid grid-cols-2 gap-4 mb-6 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
-          <div>
-            <p className="text-gray-500 mb-1">Nama Anggota</p>
-            <p className="font-semibold text-dark">{data.name}</p>
+          {/* INFO PELANGGAN */}
+          <div className="grid grid-cols-2 gap-4 mb-6 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <div>
+              <p className="text-gray-500 mb-1">Nama Anggota</p>
+              <p className="font-semibold text-dark">{data.user?.anggota?.nama_lengkap}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 mb-1">Status Pesanan</p>
+              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${statusStyles[data.status_pesanan]}`}>
+                {data.status_pesanan}
+              </span>
+            </div>
           </div>
-          <div>
-            <p className="text-gray-500 mb-1">Status Pesanan</p>
-            <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">
-              {data.status}
+
+          {/* TABEL ITEM PRODUK (Dari DetailPesananController) */}
+          <div className="flex-1 overflow-y-auto border border-gray-200 rounded-xl">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead className="bg-gray-50 sticky top-0 shadow-sm">
+                <tr>
+                  <th className="py-3 px-4 font-semibold text-gray-600 border-b">
+                    Produk
+                  </th>
+                  <th className="py-3 px-4 font-semibold text-gray-600 border-b text-center">
+                    Harga Satuan
+                  </th>
+                  <th className="py-3 px-4 font-semibold text-gray-600 border-b text-center">
+                    Jumlah
+                  </th>
+                  <th className="py-3 px-4 font-semibold text-gray-600 border-b text-right">
+                    Subtotal
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoadingDetails ? (
+                  <tr>
+                    <td colSpan="4" className="py-8 text-center text-gray-500">
+                      <span className="animate-pulse">
+                        Memuat daftar produk...
+                      </span>
+                    </td>
+                  </tr>
+                ) : detailItems.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="py-8 text-center text-gray-500">
+                      Tidak ada produk dalam pesanan ini.
+                    </td>
+                  </tr>
+                ) : (
+                  detailItems.details?.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="border-b last:border-0 hover:bg-gray-50"
+                    >
+                      {/* Sesuaikan item.product.nama dengan nama kolom di tabel Product Anda */}
+                      <td className="py-3 px-4 font-medium text-dark">
+                        {item.product?.nama_produk ||
+                          item.name ||
+                          "Produk Tidak Diketahui"}
+                      </td>
+                      {/* Asumsi harga didapat dari harga produk dibagi jumlah atau langsung dari relasi */}
+                      <td className="py-3 px-4 text-center text-gray-600">
+                        {formatIDR(item.harga_satuan)}
+                      </td>
+                      <td className="py-3 px-4 text-center font-medium">
+                        {item.jumlah}
+                      </td>
+                      <td className="py-3 px-4 text-right font-semibold text-blue-600">
+                        {formatIDR(item.subtotal)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* FOOTER TOTAL */}
+          <div className="mt-6 flex justify-between items-center border-t pt-4">
+            <span className="text-gray-500 font-medium">Total Keseluruhan</span>
+            <span className="text-2xl font-bold text-dark">
+              {formatIDR(data.total_harga || data.total)}
             </span>
           </div>
         </div>
-
-        {/* TABEL ITEM PRODUK (Dari DetailPesananController) */}
-        <div className="flex-1 overflow-y-auto border border-gray-200 rounded-xl">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-gray-50 sticky top-0 shadow-sm">
-              <tr>
-                <th className="py-3 px-4 font-semibold text-gray-600 border-b">
-                  Produk
-                </th>
-                <th className="py-3 px-4 font-semibold text-gray-600 border-b text-center">
-                  Harga Satuan
-                </th>
-                <th className="py-3 px-4 font-semibold text-gray-600 border-b text-center">
-                  Jumlah
-                </th>
-                <th className="py-3 px-4 font-semibold text-gray-600 border-b text-right">
-                  Subtotal
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoadingDetails ? (
-                <tr>
-                  <td colSpan="4" className="py-8 text-center text-gray-500">
-                    <span className="animate-pulse">
-                      Memuat daftar produk...
-                    </span>
-                  </td>
-                </tr>
-              ) : detailItems.length === 0 ? (
-                <tr>
-                  <td colSpan="4" className="py-8 text-center text-gray-500">
-                    Tidak ada produk dalam pesanan ini.
-                  </td>
-                </tr>
-              ) : (
-                detailItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-b last:border-0 hover:bg-gray-50"
-                  >
-                    {/* Sesuaikan item.product.nama dengan nama kolom di tabel Product Anda */}
-                    <td className="py-3 px-4 font-medium text-dark">
-                      {item.product?.nama ||
-                        item.product?.name ||
-                        "Produk Tidak Diketahui"}
-                    </td>
-                    {/* Asumsi harga didapat dari harga produk dibagi jumlah atau langsung dari relasi */}
-                    <td className="py-3 px-4 text-center text-gray-600">
-                      {formatIDR(item.subtotal / item.jumlah)}
-                    </td>
-                    <td className="py-3 px-4 text-center font-medium">
-                      {item.jumlah}
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-blue-600">
-                      {formatIDR(item.subtotal)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* FOOTER TOTAL */}
-        <div className="mt-6 flex justify-between items-center border-t pt-4">
-          <span className="text-gray-500 font-medium">Total Keseluruhan</span>
-          <span className="text-2xl font-bold text-dark">
-            {formatIDR(data.total_harga || data.total)}
-          </span>
-        </div>
-      </div>
-    </div>
+      </div>,
+      document.body,
+    )
   );
 }

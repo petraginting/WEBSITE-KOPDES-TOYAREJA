@@ -1,9 +1,10 @@
 import React, { useState, useRef } from "react";
 
-const PaymentModal = ({ isOpen, onClose, totalPrice }) => {
+const PaymentModal = ({ isOpen, onClose, totalPrice, onCheckout }) => {
   const [paymentMethod, setPaymentMethod] = useState("qris");
   const [proofFile, setProofFile] = useState(null);
   const [showCODPopup, setShowCODPopup] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -14,13 +15,29 @@ const PaymentModal = ({ isOpen, onClose, totalPrice }) => {
       maximumFractionDigits: 0,
     }).format(angka);
 
-  const handleSuccessTransaction = (method) => {
-    alert(
-      `Transaksi dengan ${method.toUpperCase()} berhasil! Pesanan KOPDES TOYAREJA dipindahkan ke riwayat.`,
-    );
-    onClose();
+  const handleSuccessTransaction = async (method) => {
+    if (!onCheckout) {
+      alert(`Transaksi dengan ${method.toUpperCase()} berhasil!`);
+      onClose();
+      resetForm();
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      await onCheckout(method);
+      resetForm();
+      // onClose dipanggil oleh parent setelah checkout berhasil
+    } catch (error) {
+      console.error("Error during checkout:", error);
+      setIsProcessing(false);
+    }
+  };
+
+  const resetForm = () => {
     setProofFile(null);
     setPaymentMethod("qris");
+    setShowCODPopup(false);
   };
 
   const handleMethodSelect = (method) => {
@@ -87,11 +104,10 @@ const PaymentModal = ({ isOpen, onClose, totalPrice }) => {
             {/* Opsi QRIS */}
             <div
               onClick={() => handleMethodSelect("qris")}
-              className={`border-2 rounded-xl p-4 mb-4 flex justify-between items-center cursor-pointer transition-all ${
-                paymentMethod === "qris"
+              className={`border-2 rounded-xl p-4 mb-4 flex justify-between items-center cursor-pointer transition-all ${paymentMethod === "qris"
                   ? "border-blue-600 bg-blue-50"
                   : "border-gray-200 hover:border-blue-300"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <div className="text-blue-600">
@@ -171,11 +187,10 @@ const PaymentModal = ({ isOpen, onClose, totalPrice }) => {
             {/* Opsi COD */}
             <div
               onClick={() => handleMethodSelect("cod")}
-              className={`border-2 rounded-xl p-4 mb-6 flex justify-between items-center cursor-pointer transition-all ${
-                paymentMethod === "cod"
+              className={`border-2 rounded-xl p-4 mb-6 flex justify-between items-center cursor-pointer transition-all ${paymentMethod === "cod"
                   ? "border-blue-600 bg-blue-50"
                   : "border-gray-200 hover:border-blue-300"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <div className="text-gray-600">
@@ -223,34 +238,41 @@ const PaymentModal = ({ isOpen, onClose, totalPrice }) => {
 
             {/* Ringkasan Total */}
             <div className="bg-gray-50 p-4 rounded-xl flex justify-between items-center mb-6">
-              <span className="text-gray-600 font-medium">
-                Total Pembayaran
-              </span>
-              <span className="text-xl font-bold text-blue-700">
+              <span className="text-gray-600 font-medium">Total Pembayaran</span>
+              <span className="text-blue-700 font-bold text-lg">
                 {formatRupiah(totalPrice)}
               </span>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-4">
+              {/* Tombol Batal */}
               <button
                 onClick={onClose}
                 className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition"
               >
                 Batal
               </button>
+
+              {/* Tombol Konfirmasi */}
               <button
-                onClick={() => handleSuccessTransaction("qris")}
-                disabled={paymentMethod === "qris" && !proofFile}
-                className={`flex-1 font-bold py-3 rounded-lg transition ${
-                  paymentMethod === "qris" && !proofFile
+                onClick={() => handleSuccessTransaction(paymentMethod)}
+                disabled={isProcessing || (paymentMethod === "qris" && !proofFile)}
+                className={`flex-1 font-bold py-3 rounded-lg transition ${isProcessing || (paymentMethod === "qris" && !proofFile)
                     ? "bg-blue-300 text-white cursor-not-allowed"
-                    : "bg-blue-700 text-white hover:bg-blue-800"
-                }`}
+                    : "bg-blue-700 text-white hover:bg-blue-800 shadow-md active:scale-95"
+                  }`}
               >
-                Konfirmasi
+                {isProcessing ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    Memproses...
+                  </div>
+                ) : (
+                  "Konfirmasi"
+                )}
               </button>
             </div>
+
           </div>
           {/* ✅ Tutup area scroll */}
         </div>
@@ -280,9 +302,10 @@ const PaymentModal = ({ isOpen, onClose, totalPrice }) => {
               </button>
               <button
                 onClick={confirmCOD}
-                className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                disabled={isProcessing}
+                className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
               >
-                Ya, Lanjutkan
+                {isProcessing ? "Memproses..." : "Ya, Lanjutkan"}
               </button>
             </div>
           </div>

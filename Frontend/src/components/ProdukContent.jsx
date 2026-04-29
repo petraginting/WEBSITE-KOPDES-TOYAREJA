@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { List_products } from "../dataset/data.produk";
 import {
-  createProduk,
-  updateProduk,
   deleteProduk,
   produkToFormData,
-  validateProdukForm,
   getDefaultFormData,
+  formatIDR,
 } from "../utilities/produkUtils";
+import { getAllProducts } from "../api/products";
+import api from "../api/axios";
 
 export default function ProdukContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -17,37 +16,50 @@ export default function ProdukContent() {
 
   // Inisialisasi dengan objek default
   const [formData, setFormData] = useState(getDefaultFormData());
-  const [produkList, setProdukList] = useState(List_products);
+  const [produkList, setProdukList] = useState([]);
 
   // State untuk Filter & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("Semua Kategori");
+
+  const fetchDataProduct = async () => {
+    try {
+      const data = await getAllProducts();
+
+      setProdukList(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDataProduct()
+  }, [])
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleTambahProduk = (e) => {
+  const handleTambahProduk = async (e) => {
     e.preventDefault();
 
-    if (!validateProdukForm(formData)) {
-      alert("Harap isi semua field yang diperlukan!");
-      return;
-    }
+    try {
+      if (editMode) {
+        await api.put(`/admin/products/${produkYangDiedit.id}`, formData);
+      } else {
+        await api.post("/admin/products/add", formData);
+      }
 
-    if (editMode && produkYangDiedit) {
-      const updatedList = updateProduk(produkList, produkYangDiedit, formData);
-      setProdukList(updatedList);
-      alert("Produk berhasil diupdate!");
-    } else {
-      const produkBaru = createProduk(produkList, formData);
-      setProdukList([...produkList, produkBaru]);
-      alert("Produk berhasil ditambahkan!");
+      await fetchDataProduct(); // 🔥 penting
+      resetForm();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal simpan produk");
     }
-
-    resetForm();
   };
+
 
   const handleEditProduk = (produk) => {
     setEditMode(true);
@@ -73,10 +85,10 @@ export default function ProdukContent() {
   // LOGIKA FILTER & SEARCH
   const filteredProducts = produkList.filter((item) => {
     const matchesSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+      item.nama_produk?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.kategori?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
-      filterCategory === "Semua Kategori" || item.category === filterCategory;
+      filterCategory === "Semua Kategori" || item.kategori?.toLowerCase() === filterCategory.toLowerCase();
 
     return matchesSearch && matchesCategory;
   });
@@ -185,8 +197,8 @@ export default function ProdukContent() {
                 </div>
 
                 <input
-                  name="name"
-                  value={formData.name}
+                  name="nama_produk"
+                  value={formData.nama_produk}
                   onChange={handleInputChange}
                   placeholder="Nama Produk"
                   className="w-full border p-2.5 rounded-lg"
@@ -194,31 +206,31 @@ export default function ProdukContent() {
                 />
 
                 <select
-                  name="category"
-                  value={formData.category}
+                  name="kategori"
+                  value={formData.kategori}
                   onChange={handleInputChange}
                   className="w-full border p-2.5 rounded-lg bg-white"
                 >
                   <option value="">Pilih Kategori</option>
-                  <option value="Sembako">Sembako</option>
-                  <option value="Kebutuhan Rumah">Kebutuhan Rumah</option>
-                  <option value="Pertanian">Pertanian</option>
-                  <option value="Perikanan">Perikanan</option>
+                  <option value="sembako">Sembako</option>
+                  <option value="kebutuhan rumah">Kebutuhan Rumah</option>
+                  <option value="pertanian">Pertanian</option>
+                  <option value="perikanan">Perikanan</option>
                 </select>
 
                 <div className="grid grid-cols-2 gap-3">
                   <input
-                    name="price"
+                    name="harga"
                     type="number"
-                    value={formData.price}
+                    value={formData.harga}
                     onChange={handleInputChange}
                     placeholder="Harga (Contoh: 50000)"
                     className="border p-2.5 rounded-lg"
                   />
                   <input
-                    name="stock"
+                    name="stok"
                     type="number"
-                    value={formData.stock}
+                    value={formData.stok}
                     onChange={handleInputChange}
                     placeholder="Stok"
                     className="border p-2.5 rounded-lg"
@@ -260,21 +272,19 @@ export default function ProdukContent() {
 function ProductCard({ produk, onEdit, onDelete }) {
   return (
     <div className="bg-white border border-border rounded-2xl overflow-hidden transition-all hover:-translate-y-[3px] hover:shadow-md flex flex-col">
-      <div className="w-full h-[140px] bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center text-[40px]">
-        {produk.emoji}
-      </div>
+      <img src={produk.gambar} alt="" className="w-full h-[240px] flex items-center justify-center object-cover" />
       <div className="p-4 flex-1">
         <div className="font-bold text-[15px] mb-1 text-dark">
-          {produk.name}
+          {produk.nama}
         </div>
         <div className="text-[11px] text-light mb-2.5 uppercase tracking-wider font-semibold">
-          {produk.category} • {produk.unit}
+          {produk.kategori} • {produk.unit}
         </div>
         <div className="text-lg font-extrabold text-blue-700">
-          {produk.price}
+          {formatIDR(produk.harga)}
         </div>
         <div className="text-[12px] text-light mt-1">
-          Stok: <span className="font-bold">{produk.stock}</span> unit
+          Stok: <span className="font-bold">{produk.stok}</span> unit
         </div>
       </div>
       <div className="p-3 border-t border-gray-50 flex gap-2">

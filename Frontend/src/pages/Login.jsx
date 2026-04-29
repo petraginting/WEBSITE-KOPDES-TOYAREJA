@@ -1,17 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../api/axios";
 import InputField from "../components/InputField";
 import llogin from "../assets/Kopdes.png";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
+  const { login, user, loading } = useAuth();
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     username: "",
     password: "",
-    device_name: "web app",
   });
+
   const [isLoading, setIsLoading] = useState(false);
+
+  // 🔥 REDIRECT kalau sudah login
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [user, loading, navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,57 +33,20 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      const response = await api.post("/auth/login", formData);
-
-      if (response.data) {
-        console.log("Login Sukses:", response.data);
-        // 1. Simpan Token ke sessionStorage
-        sessionStorage.setItem("token", response.data.data.token);
-        // 2. Simpan Role ke sessionStorage
-        const userRole = response.data.data.user.role;
-        sessionStorage.setItem("role", userRole);
-
-        alert("Login Berhasil!");
-        // 3. Arahkan (Navigate) berdasarkan Role
-        if (userRole === "admin") {
-          navigate("/admin"); //jika admin
-        } else {
-          navigate("/"); //jika user
-        }
-      } else {
-        alert(response.data);
-      }
+      await login(formData.username, formData.password);
     } catch (error) {
-      console.error("Login Gagal:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data ||
-        "Koneksi server gagal silahkan coba lagi";
-      alert(errorMessage);
+      alert(error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const UserIcon = (
-    <svg className="w-5 h-5 fill-current" viewBox="0 0 20 20">
-      <path
-        fillRule="evenodd"
-        d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
-  const LockIcon = (
-    <svg className="w-5 h-5 fill-current" viewBox="0 0 20 20">
-      <path
-        fillRule="evenodd"
-        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
+  // 🔥 Jangan render apa-apa saat loading auth
+  if (loading) {
+    return <div className="text-center mt-10">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center pt-5 px-5">
@@ -82,22 +58,23 @@ export default function Login() {
             className="w-full h-full object-contain rounded-full"
           />
         </div>
-        <h1 className="text-center justify-center text-[32px] font-black text-black tracking-wide mb-1 drop-shadow-md">
-          SELAMAT DATANG
-        </h1>
-        <p className="text-gray-800 text-[17px] mb-8">Masuk ke akun anda</p>
 
-        <div className="w-full bg-white rounded-[28px] shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-200 p-6 sm:p-8">
+        <h1 className="text-[32px] font-black mb-1">SELAMAT DATANG</h1>
+        <p className="text-gray-800 text-[17px] mb-8">
+          Masuk ke akun anda
+        </p>
+
+        <div className="w-full bg-white rounded-[28px] shadow p-6 sm:p-8">
           <form onSubmit={handleLogin}>
             <InputField
-              label="NIK"
+              label="Nomor Telepon"
               name="username"
               type="text"
               value={formData.username}
               onChange={handleChange}
-              placeholder="Masukkan NIK anda"
-              icon={UserIcon}
+              placeholder="Masukkan nomor hp anda"
             />
+
             <InputField
               label="Password"
               name="password"
@@ -105,13 +82,12 @@ export default function Login() {
               value={formData.password}
               onChange={handleChange}
               placeholder="Masukkan Password"
-              icon={LockIcon}
             />
 
             <div className="flex justify-end mb-6 mt-1">
               <Link
                 to="/forgot-password"
-                className="text-[13px] font-bold text-black hover:text-blue-600"
+                className="text-[13px] font-bold hover:text-blue-600"
               >
                 Lupa Password?
               </Link>
@@ -120,14 +96,14 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#3b66f5] hover:bg-blue-700 text-white font-bold text-[17px] py-3.5 px-4 rounded-xl mb-3 disabled:opacity-50"
+              className="w-full bg-[#3b66f5] text-white font-bold py-3.5 rounded-xl mb-3 disabled:opacity-50"
             >
               {isLoading ? "Memproses..." : "Masuk"}
             </button>
 
             <Link
               to="/register"
-              className="w-full flex justify-center bg-white border border-gray-400 text-black font-bold text-[17px] py-3.5 px-4 rounded-xl hover:bg-gray-50"
+              className="w-full flex justify-center border py-3.5 rounded-xl"
             >
               Registrasi
             </Link>

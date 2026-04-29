@@ -78,10 +78,10 @@ class DetailPesananController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($pesanan_id)
+    public function show($id)
     {
         $details = Detail_pesanan::with('product')
-                    ->where('pesanan_id', $pesanan_id)
+                    ->where('pesanan_id', $id)
                     ->get();
 
         return response()->json([
