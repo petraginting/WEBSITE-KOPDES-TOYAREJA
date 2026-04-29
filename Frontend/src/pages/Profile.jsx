@@ -1,41 +1,50 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { api } from "../api/axios";
+import { useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
+import {
+  User,
+  VenusAndMars,
+  Mail,
+  Phone,
+  MapPin,
+  Edit2,
+  X,
+  LogOut,
+} from "lucide-react";
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- STATE BARU UNTUK FITUR EDIT (CRUD) ---
   const [isEditing, setIsEditing] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [formData, setFormData] = useState({});
+  const [imagePreview, setImagePreview] = useState(null);
 
-  // READ: Fungsi memanggil API Backend (Laravel)
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
         setIsLoading(true);
-        // UNTUK NANTI: Endpoint untuk mengambil data profil pengguna yang sedang login
-        // const response = await api.get('/user/profile');
-        // setProfile(response.data.data);
-        // setFormData(response.data.data); // Sinkronisasi form data
 
-        // --- DATA DUMMY SEMENTARA SESUAI DESAIN ---
         setTimeout(() => {
+          const savedAvatar = localStorage.getItem("userAvatar");
           const dummyData = {
             nama_lengkap: "Andi Pratama",
-            member_sejak: "April 2026",
+            jenis_kelamin: "Laki-Laki",
             email: "andi.pratama@email.com",
             no_hp: "+62 812-3456-7890",
             alamat: "Jl. Raya Toyareja No. 45, Cilacap, Jawa Tengah",
+            member_sejak: "April 2026",
             total_transaksi: 0,
             poin_rewards: 0,
+            foto_profil: savedAvatar ? savedAvatar : null,
           };
+
           setProfile(dummyData);
-          setFormData(dummyData); // Isi form awal dengan data asli
+          setFormData(dummyData);
           setIsLoading(false);
-        }, 600); // Simulasi loading
+        }, 600);
       } catch (error) {
         console.error("Gagal mengambil data profil:", error);
         setIsLoading(false);
@@ -45,137 +54,60 @@ export default function Profile() {
     fetchProfileData();
   }, []);
 
-  // Handler saat form input diketik
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // UPDATE: Fungsi menyimpan perubahan ke Backend
-  const handleSave = async () => {
-    try {
-      // UNTUK NANTI: Kirim data baru ke backend
-      // await api.put('/user/profile/update', formData);
-
-      setProfile(formData); // Perbarui tampilan UI
-      setIsEditing(false); // Matikan mode edit
-      alert("Profil berhasil diperbarui!");
-    } catch (error) {
-      console.error("Gagal memperbarui profil:", error);
-      // Simulasi sukses jika API mati
-      setProfile(formData);
-      setIsEditing(false);
-      alert("Profil berhasil diperbarui! (Simulasi)");
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setFormData({ ...formData, foto_profil: reader.result });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  // Kumpulan Ikon SVG
-  const Icons = {
-    User: (
-      <svg
-        className="w-8 h-8 text-[#2563eb]"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-        />
-      </svg>
-    ),
-    UserSmall: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-        />
-      </svg>
-    ),
-    Email: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-        />
-      </svg>
-    ),
-    Phone: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-        />
-      </svg>
-    ),
-    Location: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-        />
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-        />
-      </svg>
-    ),
-    Edit: (
-      <svg
-        className="w-3.5 h-3.5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-        />
-      </svg>
-    ),
+  const handleSave = async () => {
+    try {
+      setProfile(formData);
+      setIsEditing(false);
+
+      if (formData.foto_profil) {
+        localStorage.setItem("userAvatar", formData.foto_profil);
+        window.dispatchEvent(new Event("avatarUpdated"));
+      }
+
+      alert("Profil berhasil diperbarui!");
+    } catch (error) {
+      console.error("Gagal memperbarui profil:", error);
+      setProfile(formData);
+      setIsEditing(false);
+      alert("Terjadi kesalahan saat menyimpan profil.");
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center">
       <div className="w-full max-w-[450px] bg-white min-h-screen relative pb-24">
         {/* HEADER */}
-        <div className="sticky top-0 bg-white z-10 px-6 py-5 border-b border-gray-100">
+        <div className="sticky top-0 bg-white z-10 px-6 py-5 border-b border-gray-100 flex justify-between items-center">
           <h1 className="text-[22px] font-bold text-[#1e293b] tracking-tight">
             Profile
           </h1>
+          <button
+            onClick={() => {
+              if (window.confirm("Yakin ingin keluar dari akun?")) {
+                navigate("/login");
+              }
+            }}
+            className="text-gray-800 hover:text-red-600 transition-colors"
+            title="Keluar Akun"
+          >
+            <LogOut className="w-6 h-6" />
+          </button>
         </div>
 
         <div className="px-5 mt-5">
@@ -186,77 +118,82 @@ export default function Profile() {
             </div>
           ) : (
             <>
-              {/* 1. KARTU IDENTITAS (BIRU) */}
-              <div className="bg-[#2563eb] rounded-[20px] p-6 flex flex-col items-center text-center shadow-[0_8px_20px_rgba(37,99,235,0.2)] mb-6 transition-all">
-                <div className="w-[84px] h-[84px] bg-white rounded-full flex items-center justify-center mb-4 shadow-inner">
-                  {Icons.User}
+              {/* KARTU IDENTITAS */}
+              <div className="bg-[#2563eb] rounded-[20px] p-6 flex flex-col items-center text-center shadow-[0_8px_20px_rgba(37,99,235,0.2)] mb-6">
+                <div
+                  onClick={() => {
+                    if (profile.foto_profil) setIsPreviewOpen(true);
+                  }}
+                  className="w-[84px] h-[84px] bg-white rounded-full flex items-center justify-center mb-4 shadow-inner overflow-hidden border-2 border-white cursor-pointer hover:opacity-90 transition-opacity"
+                >
+                  {profile.foto_profil ? (
+                    <img
+                      src={profile.foto_profil}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-8 h-8 text-[#2563eb]" />
+                  )}
                 </div>
                 <h2 className="text-white font-bold text-[20px] mb-0.5">
                   {profile.nama_lengkap}
                 </h2>
-                <p className="text-blue-100 text-[13px]">
-                  Member sejak {profile.member_sejak}
-                </p>
               </div>
 
-              {/* 2. KARTU INFORMASI PRIBADI */}
-              <div className="bg-white rounded-[20px] p-5 sm:p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-6 transition-all">
+              {/* INFORMASI PRIBADI */}
+              <div className="bg-white rounded-[20px] p-5 sm:p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-6">
                 <div className="flex justify-between items-center mb-5">
                   <h3 className="font-bold text-gray-900 text-[16px]">
                     Informasi Pribadi
                   </h3>
-
-                  {/* TOMBOL EDIT / SIMPAN */}
                   <button
-                    onClick={() =>
-                      isEditing ? handleSave() : setIsEditing(true)
-                    }
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
-                      isEditing
-                        ? "bg-green-100 text-green-700 hover:bg-green-200"
-                        : "text-[#2563eb] bg-blue-50 hover:bg-blue-100"
-                    }`}
+                    onClick={() => {
+                      setFormData(profile);
+                      setImagePreview(profile.foto_profil);
+                      setIsEditing(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-[#2563eb] bg-blue-50 hover:bg-blue-100"
                   >
-                    {!isEditing && (
-                      <div className="bg-white text-blue-500 p-0.5 rounded-sm shadow-sm">
-                        {Icons.Edit}
-                      </div>
-                    )}
-                    <span className="font-semibold text-[13px]">
-                      {isEditing ? "Simpan" : "Edit"}
-                    </span>
+                    <div className="bg-white text-blue-500 p-0.5 rounded-sm shadow-sm">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-semibold text-[13px]">Edit</span>
                   </button>
                 </div>
 
                 <div className="flex flex-col gap-5">
-                  {/* Row Nama */}
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-[#eff6ff] rounded-full flex items-center justify-center text-[#2563eb] shrink-0">
-                      {Icons.UserSmall}
+                      <User className="w-5 h-5" />
                     </div>
-                    <div className="flex flex-col w-full">
+                    <div className="flex flex-col">
                       <span className="text-gray-400 text-[12px] font-medium mb-0.5">
                         Nama Lengkap
                       </span>
-                      {isEditing ? (
-                        <input
-                          name="nama_lengkap"
-                          value={formData.nama_lengkap}
-                          onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-[14px] outline-none focus:border-blue-500 font-medium"
-                        />
-                      ) : (
-                        <span className="text-gray-900 font-bold text-[14px]">
-                          {profile.nama_lengkap}
-                        </span>
-                      )}
+                      <span className="text-gray-900 font-bold text-[14px]">
+                        {profile.nama_lengkap}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Row Email (Biasanya email tidak bisa diubah langsung, jadi dibiarkan statis) */}
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-[#eff6ff] rounded-full flex items-center justify-center text-[#2563eb] shrink-0">
-                      {Icons.Email}
+                      <VenusAndMars className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-gray-400 text-[12px] font-medium mb-0.5">
+                        Jenis Kelamin
+                      </span>
+                      <span className="text-gray-900 font-bold text-[14px]">
+                        {profile.jenis_kelamin}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-[#eff6ff] rounded-full flex items-center justify-center text-[#2563eb] shrink-0">
+                      <Mail className="w-5 h-5" />
                     </div>
                     <div className="flex flex-col">
                       <span className="text-gray-400 text-[12px] font-medium mb-0.5">
@@ -268,59 +205,37 @@ export default function Profile() {
                     </div>
                   </div>
 
-                  {/* Row No HP */}
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-[#eff6ff] rounded-full flex items-center justify-center text-[#2563eb] shrink-0">
-                      {Icons.Phone}
+                      <Phone className="w-5 h-5" />
                     </div>
-                    <div className="flex flex-col w-full">
+                    <div className="flex flex-col">
                       <span className="text-gray-400 text-[12px] font-medium mb-0.5">
                         Nomor Telepon
                       </span>
-                      {isEditing ? (
-                        <input
-                          name="no_hp"
-                          type="text"
-                          value={formData.no_hp}
-                          onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-[14px] outline-none focus:border-blue-500 font-medium"
-                        />
-                      ) : (
-                        <span className="text-gray-900 font-bold text-[14px]">
-                          {profile.no_hp}
-                        </span>
-                      )}
+                      <span className="text-gray-900 font-bold text-[14px]">
+                        {profile.no_hp}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Row Alamat */}
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-[#eff6ff] rounded-full flex items-center justify-center text-[#2563eb] shrink-0">
-                      {Icons.Location}
+                      <MapPin className="w-5 h-5" />
                     </div>
-                    <div className="flex flex-col w-full">
+                    <div className="flex flex-col">
                       <span className="text-gray-400 text-[12px] font-medium mb-0.5">
                         Alamat
                       </span>
-                      {isEditing ? (
-                        <textarea
-                          name="alamat"
-                          rows="2"
-                          value={formData.alamat}
-                          onChange={handleChange}
-                          className="w-full bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-[14px] outline-none focus:border-blue-500 font-medium leading-snug resize-none"
-                        />
-                      ) : (
-                        <span className="text-gray-900 font-bold text-[14px] leading-snug">
-                          {profile.alamat}
-                        </span>
-                      )}
+                      <span className="text-gray-900 font-bold text-[14px] leading-snug">
+                        {profile.alamat}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 3. STATISTIK AKUN */}
+              {/* STATISTIK AKUN */}
               <div>
                 <h3 className="font-bold text-[#1e293b] text-[16px] mb-3 px-1">
                   Statistik Akun
@@ -345,25 +260,165 @@ export default function Profile() {
                   </div>
                 </div>
               </div>
-
-              {/* Tombol Logout */}
-              <div className="mt-8 mb-4">
-                <button
-                  onClick={() => {
-                    if (window.confirm("Yakin ingin keluar?"))
-                      window.location.href = "/";
-                  }}
-                  className="w-full bg-red-50 text-red-600 font-bold text-[15px] py-3.5 rounded-xl hover:bg-red-100 transition-colors"
-                >
-                  Keluar Akun
-                </button>
-              </div>
             </>
           )}
         </div>
 
-        {/* Panggil Bottom Navigation */}
         <BottomNav />
+
+        {/* MODAL EDIT PROFIL */}
+        {isEditing && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity">
+            <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="text-lg font-bold text-gray-900">Edit Profil</h2>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="hover:bg-gray-100 p-1 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6 text-gray-700" />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+                    Nama Lengkap
+                  </label>
+                  <input
+                    name="nama_lengkap"
+                    value={formData.nama_lengkap || ""}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+                    Jenis Kelamin
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="jenis_kelamin"
+                      value={formData.jenis_kelamin || ""}
+                      onChange={handleChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm appearance-none bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="Laki-Laki">Laki-Laki</option>
+                      <option value="Perempuan">Perempuan</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+                    Nomor Telepon
+                  </label>
+                  <input
+                    name="no_hp"
+                    type="text"
+                    value={formData.no_hp || ""}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+                    Alamat
+                  </label>
+                  <input
+                    name="alamat"
+                    type="text"
+                    value={formData.alamat || ""}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+                    Foto Profile
+                  </label>
+                  <div className="border border-gray-300 rounded-lg p-1 text-center hover:bg-gray-50 transition-colors relative cursor-pointer overflow-hidden h-[100px] flex items-center justify-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    {imagePreview ? (
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="h-full object-contain z-0"
+                      />
+                    ) : (
+                      <span className="text-sm text-gray-500 z-0">
+                        Ketuk untuk pilih Foto
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-2">
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="flex-1 bg-gray-100 text-gray-700 font-semibold py-2.5 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="flex-1 bg-[#2563eb] text-white font-semibold py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm shadow-md"
+                  >
+                    Konfirmasi
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL PREVIEW FOTO BESAR */}
+        {isPreviewOpen && profile?.foto_profil && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 transition-opacity"
+            onClick={() => setIsPreviewOpen(false)}
+          >
+            <div
+              className="relative max-w-sm w-full flex flex-col items-center transition-transform transform scale-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setIsPreviewOpen(false)}
+                className="absolute -top-12 right-0 text-white/70 hover:text-white p-2 transition-colors"
+              >
+                <X className="w-8 h-8" />
+              </button>
+              <img
+                src={profile.foto_profil}
+                alt="Preview Full"
+                className="w-full h-auto max-h-[70vh] rounded-2xl shadow-2xl object-cover"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
