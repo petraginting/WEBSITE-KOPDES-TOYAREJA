@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
@@ -20,6 +23,45 @@ class ProductController extends Controller
             'message' => 'list of products',
             'data' => $products
         ], 200);    
+    }
+
+    public function getForcastingStok()
+    {
+        $data = DB::table('forecast_results')->get();
+
+        $result = [];
+
+        foreach ($data as $row) {
+            $nama = strtolower(trim($row->nama_barang));
+
+            if (!isset($result[$nama])) {
+                $result[$nama] = [
+                    'nama_barang' => $row->nama_barang,
+                    'prediksi_7_hari' => null,
+                    'prediksi_30_hari' => null,
+                ];
+            }
+
+            if ($row->periode == 7) {
+                $result[$nama]['prediksi_7_hari'] = [
+                    'sisa_stok' => $row->sisa_stok,
+                    'hari_habis' => $row->hari_habis
+                ];
+            }
+
+            if ($row->periode == 30) {
+                $result[$nama]['prediksi_30_hari'] = [
+                    'sisa_stok' => $row->sisa_stok,
+                    'hari_habis' => $row->hari_habis
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Forecast berhasil disimpan',
+            'data' => array_values($result)
+        ]);
     }
 
     /**
@@ -48,7 +90,8 @@ class ProductController extends Controller
             'harga' => 'required|numeric|min:0',
             'kategori' => 'required|string|max:100', 
             'stok' => 'required|integer|min:0',
-            'gambar' => 'nullable|url'
+            'gambar' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+            
         ]);
 
         if ($validator->fails()) { 
@@ -59,14 +102,14 @@ class ProductController extends Controller
             ],422);
         }
 
-        $product = Product::create([
-            'nama_produk' => $request->nama_produk,
-            'unit' => $request->unit,
-            'harga' => $request->harga,
-            'kategori' => $request->kategori,
-            'stok' => $request->stok,
-            'gambar' => $request->gambar
-        ]); 
+        $data = $validator->validated();
+
+        // 🔥 HANDLE FILE (WAJIB)
+        if ($request->hasFile('gambar')) {
+            $data['gambar'] = $request->file('gambar')->store('produk', 'public');
+        }
+
+        $product = Product::create($data);
 
         return Response()->json([
             'success'=> true, 
@@ -116,41 +159,60 @@ class ProductController extends Controller
                 'message' => 'Akses ditolak, Anda bukan admin',
             ], 403);
         }
-        
+
         $product = Product::find($id);
-        if(!$product) { 
+        if (!$product) {
             return response()->json([
                 'success' => false,
                 'message' => 'Product Not Found'
-            ], 404); 
+            ], 404);
         }
-        // VALIDASI
+
         $validator = Validator::make($request->all(), [
             'nama_produk' => 'sometimes|string|max:255',
             'unit' => 'sometimes|string|max:50',
             'harga' => 'sometimes|numeric|min:0',
             'kategori' => 'sometimes|string|max:100',
             'stok' => 'sometimes|integer|min:0',
-            'gambar' => 'nullable|sometimes|url'
+            'gambar' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        if($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json([
-            'success' => false,
-            'message' => $validator->errors()
+                'success' => false,
+                'message' => $validator->errors()
             ], 422);
         }
 
         $data = $validator->validate();
 
-        $product->update($data);
 
-        return response()-> json([
+        // 🔥 HANDLE FILE
+        if ($request->hasFile('gambar')) {
+
+            // hapus gambar lama
+            if ($product->gambar) {
+                Storage::disk('public')->delete($product->gambar);
+            }
+
+            // simpan baru
+            $data['gambar'] = $request->file('gambar')->store('produk', 'public');
+        }
+
+//         Log::info('HAS FILE:', ['gambar' => $request->hasFile('gambar')]);
+// Log::info('FILES:', $request->allFiles());
+
+        foreach ($data as $key => $value) {
+            $product->$key = $value;
+        }
+
+        $product->save();
+
+        return response()->json([
             'success' => true,
-            'message' => 'Product Update ',
+            'message' => 'Product Update',
             'data' => $product
         ], 200);
-
     }
 
     /**

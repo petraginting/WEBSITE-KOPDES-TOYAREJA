@@ -13,6 +13,7 @@ use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\OtpController as AuthOtpController;
 use App\Http\Controllers\Auth\User\RegisterController;
+use App\Http\Controllers\ProfileKopdesController;
 
 // Auth user (default Laravel)
 Route::get('/user', function (Request $request) {
@@ -33,7 +34,12 @@ Route::prefix('admin')->group(function () {
     Route::put('/anggota/update/{anggota}', [AnggotaController::class, 'updateDataAnggota'])->middleware('auth:sanctum');
     
 
+    Route::put('/profil-kopdes/update', [ProfileKopdesController::class, 'updateDataProfile'])->middleware('auth:sanctum');
+    Route::get('/profil-kopdes', [ProfileKopdesController::class, 'index'])->middleware('auth:sanctum');
+
+
     Route::post('/products/add', [ProductController::class, 'store'])->middleware('auth:sanctum');
+    Route::get('/forcast', [ProductController::class, 'getForcastingStok'])->middleware('auth:sanctum');
     Route::put('/products/{id}', [ProductController::class, 'update'])->middleware('auth:sanctum');
 
 

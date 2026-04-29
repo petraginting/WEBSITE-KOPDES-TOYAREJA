@@ -1,39 +1,26 @@
-from flask import Flask, request, jsonify
 import pandas as pd
 from config.db import get_db
 from src.data.load_datas import load_transaksi, load_stok
 from src.result.save_result import save_forcast
 from src.model.prophet import run_forecasting
 
-app = Flask(__name__)
 
-@app.route('/run-predict', methods=['POST'])
-def run_prediction():
+def main():
     try:
-        df = pd.read_csv(r'E:\kampus\semester 6\Computing Project\Toska\AI_Prediction_Stock\src\data\transaksi_dummy.csv')
+        df = pd.read_csv(r'E:\laragon\www\toska\AI_Prediction\src\data\data_transaksi_kopdes.csv')
 
-        stok = {
-            'minyak 1L': 200,
-            'gula': 134,
-            'beras 5kg': 38,
-            'telur': 303
-        }
+        stok = load_stok()
+
+        print(stok)
 
         hasil = run_forecasting(df, stok)
         save_forcast(hasil)
 
-        return jsonify({
-            'success': True,
-            'message': 'Prediksi berhasil dijalankan dan hasil disimpan ke database.'
-        })
+        print("Forecast berhasil disimpan")
     
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error saat menjalankan prediksi: {str(e)}'
-        }), 500
+        print(f"error : {str(e)}")
 
 if __name__ == '__main__':
-    app.run(debug=True)
-
+    main()
 

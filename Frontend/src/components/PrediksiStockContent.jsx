@@ -1,32 +1,48 @@
-import { useState } from "react";
-// Pastikan path import ini sesuai dengan struktur foldermu
-import { List_prediksiStok } from "../dataset/data.stok";
+import { useEffect, useState } from "react";
+import api from "../api/axios";
+import { getActivePrediksi, mapData } from "../utilities/forcast";
 
 export default function PrediksiStockContent() {
   // 1. Ubah nama variabel state agar sesuai konteks Stok
-  const [stokList, setStokList] = useState(List_prediksiStok);
+  const [stokList, setStokList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Semua Prediksi");
+  const [statusFilter, setStatusFilter] = useState("Prediksi 7 hari");
 
   // --- FILTER & SEARCH ---
   const filteredStok = stokList.filter((item) => {
-    // 2. Pencarian hanya berdasarkan Nama Barang
+    const prediksi = getActivePrediksi(item, statusFilter);
+
     const matchesSearch = item.namaBarang
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
 
-    // 3. Logika filter diubah berdasarkan sisaHari (angka)
     let matchesStatus = true;
-    if (statusFilter === "Prediksi 7 hari") {
-      matchesStatus = item.sisaHari <= 7;
+
+    if (prediksi.sisaHari === null) {
+      matchesStatus = true; // Aman
+    } else if (statusFilter === "Prediksi 7 hari") {
+      matchesStatus = prediksi.sisaHari <= 7;
     } else if (statusFilter === "Prediksi 30 hari") {
-      matchesStatus = item.sisaHari > 7 && item.sisaHari <= 30;
-    } else if (statusFilter === "Prediksi 6 bulan") {
-      matchesStatus = item.sisaHari > 30;
+      matchesStatus = prediksi.sisaHari <= 30;
     }
 
     return matchesSearch && matchesStatus;
   });
+
+  const fetchDataForcast = async () => {
+    try {
+      const res = await api.get('/admin/forcast')
+
+      const mapped = mapData(res.data.data)
+      setStokList(mapped)
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  useEffect(() => {
+    fetchDataForcast()
+  }, [])
 
   return (
     <div className="animate-fadeInUp">
@@ -50,10 +66,8 @@ export default function PrediksiStockContent() {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="border border-border rounded-xl py-2.5 px-3 text-[13px] text-dark bg-white outline-none cursor-pointer"
         >
-          <option>Semua Prediksi</option>
           <option>Prediksi 7 hari</option>
           <option>Prediksi 30 hari</option>
-          <option>Prediksi 6 bulan</option>
         </select>
       </div>
 
@@ -95,19 +109,29 @@ export default function PrediksiStockContent() {
                   <td className="px-4 py-3 font-medium text-dark">
                     {item.namaBarang}
                   </td>
-                  <td className="px-4 py-3 text-dark">{item.sisaStok} unit</td>
+                  <td className="px-4 py-3 text-dark">
+                    {statusFilter === "Prediksi 7 hari" ?
+                      (item.prediksi7?.sisaStok)
+                      : (item.prediksi30?.sisaStok)
+                    } unit</td>
                   <td className="px-4 py-3">
                     {/* Logika warna dinamis menggunakan Tailwind berdasarkan sisa hari */}
                     <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                        item.sisaHari <= 7
-                          ? "bg-red-100 text-red-600"
-                          : item.sisaHari <= 30
-                            ? "bg-yellow-100 text-yellow-600"
-                            : "bg-green-100 text-green-600"
-                      }`}
+                      className={`px-2.5 py-1 rounded-full text-xs font-bold ${item.sisaHari <= 7
+                        ? "bg-red-100 text-red-600"
+                        : item.sisaHari <= 30
+                          ? "bg-yellow-100 text-yellow-600"
+                          : "bg-green-100 text-green-600"
+                        }`}
                     >
-                      {item.sisaHari} Hari
+                      {statusFilter === "Prediksi 7 hari" ?
+                        (item.prediksi7?.sisaHari === null
+                          ? "Aman"
+                          : `${item.prediksi7?.sisaHari} Hari`)
+                        : (item.prediksi30?.sisaHari === null
+                          ? "Aman"
+                          : `${item.prediksi30?.sisaHari} Hari`)
+                      }
                     </span>
                   </td>
                 </tr>

@@ -1,28 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { formatDataProfile } from "../utilities/profile_kopdes";
+import { lihatProfileKopdes, updateProfileKopdes } from "../api/profile";
 
 export default function ProfilContent() {
+  const baseURL = "http://localhost:8000/storage/";
   // 1. STATE UNTUK DATA PROFIL
-  const [profileData, setProfileData] = useState({
-    foto: "/src/assets/Kopdes.png", // Ditambahkan untuk menyimpan path/URL foto
-    nama: "Koperasi Desa Toyareja",
-    slogan: "KOPDES TOYAREJA, Melayani dengan Hati, Membangun Desa Bersama",
-    status: "Aktif",
-    tanggalBerdiri: "15 Juni 2025",
-    singkatan: "KOPDES TOYAREJA",
-    noBadanHukum: "1234/BH/KWK.13-14/VI/2015",
-    ketua: "H. Suparman, S.Ag",
-    alamat: "Jl. Desa Makmur No.1, Kec Toyareja",
-    telepon: "(021) 987-6543",
-    whatsapp: "0812-3456-7890",
-    email: "kopdes.makmur@email.com",
-    deskripsi:
-      "Koperasi Desa Toyareja adalah koperasi yang didirikan untuk meningkatkan kesejahteraan masyarakat desa melalui kegiatan ekonomi bersama. Kami menyediakan berbagai layanan mulai dari simpan pinjam, penjualan produk kebutuhan sehari-hari, hingga pemasaran hasil produksi anggota.",
-  });
+  const [profileData, setProfileData] = useState(formatDataProfile());
+  const [preview, setPreview] = useState(null);
 
   // 2. STATE UNTUK MODAL & FORM
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState(profileData);
+
+
+  const fetchDataProfile = async () => {
+    try {
+      const data = await lihatProfileKopdes()
+      setProfileData(data)
+    } catch (error) {
+      console.error(error.message);
+
+    }
+  }
+
+  useEffect(() => {
+    fetchDataProfile()
+  }, [])
 
   // 3. HANDLER
   const handleInputChange = (e) => {
@@ -33,23 +37,40 @@ export default function ProfilContent() {
   // Handler khusus untuk membaca file foto yang diupload
   const handleFotoChange = (e) => {
     const file = e.target.files[0];
+
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setFormData({ ...formData, foto: imageUrl });
+      setFormData((prev) => ({
+        ...prev,
+        logo: file,
+      }));
     }
+
+    setPreview(URL.createObjectURL(file));
   };
+
+
 
   const handleBukaModal = () => {
     setFormData(profileData); // Sinkronkan form dengan data terbaru
     setIsModalOpen(true);
   };
 
-  const handleSimpan = (e) => {
+  const handleSimpan = async (e) => {
     e.preventDefault();
-    setProfileData(formData); // Timpa data lama dengan data baru dari form
-    setIsModalOpen(false);
-    alert("Profil koperasi berhasil diperbarui!");
+
+    try {
+      const data = await updateProfileKopdes(formData)
+
+      setProfileData(data);
+
+      setIsModalOpen(false);
+      alert("Profil koperasi berhasil diperbarui!");
+    } catch (error) {
+      console.error(error.message);
+      alert(error.message)
+    }
   };
+
 
   return (
     <div className="animate-fadeInUp">
@@ -59,22 +80,22 @@ export default function ProfilContent() {
           <div className="w-[100px] h-[100px] bg-white rounded-2xl flex items-center justify-center text-[40px] flex-shrink-0 overflow-hidden">
             {/* Gambar Profil dinamis dari state */}
             <img
-              src={profileData.foto}
+              src={baseURL + profileData.logo}
               alt=""
               className="w-full h-full object-contain"
             />
           </div>
           <div>
             <h2 className="font-serif text-[26px] mb-1 font-bold">
-              {profileData.nama}
+              {profileData.nama_koperasi}
             </h2>
-            <p className="text-white/70 text-sm">{profileData.slogan}</p>
+            <p className="text-white/70 text-sm">{profileData?.slogan}</p>
             <div className="flex items-center gap-2.5 mt-3">
               <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[11px] font-bold before:content-['●'] before:mr-1 before:text-[8px]">
-                {profileData.status}
+                {profileData?.status}
               </span>
               <span className="text-xs text-white/70">
-                Berdiri sejak {profileData.tanggalBerdiri}
+                Berdiri sejak {profileData?.tanggal_berdiri}
               </span>
             </div>
           </div>
@@ -104,7 +125,7 @@ export default function ProfilContent() {
                 <tr className="border-b border-border/50">
                   <td className="py-2.5 text-light w-[40%]">Nama Koperasi</td>
                   <td className="py-2.5 font-semibold text-dark">
-                    {profileData.nama}
+                    {profileData.nama_koperasi}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
@@ -114,7 +135,7 @@ export default function ProfilContent() {
                 <tr className="border-b border-border/50">
                   <td className="py-2.5 text-light">No. Badan Hukum</td>
                   <td className="py-2.5 text-dark">
-                    {profileData.noBadanHukum}
+                    {profileData.no_badan_hukum}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
@@ -141,11 +162,11 @@ export default function ProfilContent() {
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="py-2.5 text-light">Telepon</td>
-                  <td className="py-2.5 text-dark">{profileData.telepon}</td>
+                  <td className="py-2.5 text-dark">{profileData.no_telepon}</td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="py-2.5 text-light">WhatsApp</td>
-                  <td className="py-2.5 text-dark">{profileData.whatsapp}</td>
+                  <td className="py-2.5 text-dark">{profileData.no_wa}</td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="py-2.5 text-light">Email</td>
@@ -224,7 +245,7 @@ export default function ProfilContent() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 border border-gray-200 rounded-lg overflow-hidden bg-white flex-shrink-0">
                         <img
-                          src={formData.foto}
+                          src={preview || baseURL + formData.logo}
                           alt="preview"
                           className="w-full h-full object-contain"
                         />
@@ -244,8 +265,8 @@ export default function ProfilContent() {
                     </label>
                     <input
                       type="text"
-                      name="nama"
-                      value={formData.nama}
+                      name="nama_koperasi"
+                      value={formData.nama_koperasi}
                       onChange={handleInputChange}
                       className="w-full border rounded-lg p-2.5 text-sm outline-none focus:border-blue-500"
                       required
@@ -285,8 +306,8 @@ export default function ProfilContent() {
                       onChange={handleInputChange}
                       className="w-full border rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 bg-white"
                     >
-                      <option value="Aktif">Aktif</option>
-                      <option value="Non-Aktif">Non-Aktif</option>
+                      <option value="aktif">Aktif</option>
+                      <option value="non_aktif">Non-Aktif</option>
                     </select>
                   </div>
                   <div>
@@ -295,8 +316,8 @@ export default function ProfilContent() {
                     </label>
                     <input
                       type="text"
-                      name="tanggalBerdiri"
-                      value={formData.tanggalBerdiri}
+                      name="tanggal_berdiri"
+                      value={formData.tanggal_berdiri}
                       onChange={handleInputChange}
                       className="w-full border rounded-lg p-2.5 text-sm outline-none focus:border-blue-500"
                     />
@@ -307,8 +328,8 @@ export default function ProfilContent() {
                     </label>
                     <input
                       type="text"
-                      name="noBadanHukum"
-                      value={formData.noBadanHukum}
+                      name="no_badan_hukum"
+                      value={formData.no_badan_hukum}
                       onChange={handleInputChange}
                       className="w-full border rounded-lg p-2.5 text-sm outline-none focus:border-blue-500"
                     />
@@ -343,8 +364,8 @@ export default function ProfilContent() {
                     </label>
                     <input
                       type="text"
-                      name="telepon"
-                      value={formData.telepon}
+                      name="no_telepon"
+                      value={formData.no_telepon}
                       onChange={handleInputChange}
                       className="w-full border rounded-lg p-2.5 text-sm outline-none focus:border-blue-500"
                     />
@@ -355,8 +376,8 @@ export default function ProfilContent() {
                     </label>
                     <input
                       type="text"
-                      name="whatsapp"
-                      value={formData.whatsapp}
+                      name="no_wa"
+                      value={formData.no_wa}
                       onChange={handleInputChange}
                       className="w-full border rounded-lg p-2.5 text-sm outline-none focus:border-blue-500"
                     />

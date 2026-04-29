@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv(dotenv_path=r"E:\laragon\www\toska\AI_Prediction\.env")
 
 def get_db():
     # Ganti dengan URL koneksi database Anda

@@ -15,16 +15,16 @@ return new class extends Migration
             $table->id();
             $table->string('nama_koperasi');
             $table->string('singkatan')->nullable();
-            $table->string('slogan')->nullable();
+            $table->text('slogan')->nullable();
             $table->enum('status', ['aktif', 'non_aktif'])->default('aktif');
-            $table->date('tanggal_berdiri')->nullable();
+            $table->string('tanggal_berdiri')->nullable();
             $table->string('no_badan_hukum')->nullable();
             $table->string('ketua_koperasi')->nullable();
             $table->text('alamat')->nullable();
             $table->string('no_telepon', 15)->nullable();
             $table->string('no_wa', 15)->nullable();
             $table->string('email')->nullable();
-            $table->json('sosmed')->nullable(); // Menggunakan JSON untuk link sosial media
+            $table->string('sosmed')->nullable(); // Menggunakan JSON untuk link sosial media
             $table->text('deskripsi')->nullable();
             $table->string('logo')->nullable(); // Tambahan untuk logo koperasi
             $table->timestamps();

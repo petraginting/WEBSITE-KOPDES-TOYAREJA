@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ProfileKopdes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileKopdesController extends Controller
 {
@@ -62,27 +63,48 @@ class ProfileKopdesController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request)
+    public function updateDataProfile(Request $request)
     {
         // Validasi input
         $data = $request->validate([
-            'nama_koperasi' => 'required|string',
+            'nama_koperasi' => 'sometimes|string',
             'singkatan' => 'nullable|string',
             'email' => 'nullable|email',
-            // tambahkan field lainnya...
+            'slogan' => 'nullable|string',
+            'status' => 'nullable|in:aktif, non_aktif',
+            'tanggal_berdiri' => 'nullable|string',
+            'no_badan_hukum' => 'nullable|string',
+            'ketua_koperasi' => 'nullable|string',
+            'alamat' => 'nullable|string',
+            'no_telepon' => 'nullable|string',
+            'no_wa' => 'nullable|string',
+            'sosmed' => 'nullable|string',
+            'deskripsi' => 'nullable|string',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // Paksa ID tetap 1 agar tidak pernah ada baris ke-2
-        $profile = ProfileKopdes::updateOrCreate(
-            ['id' => 1], 
-            $data
-        );
+        $profile = ProfileKopdes::firstOrCreate(['id' => 1]);
+
+        if ($request->hasFile('logo')) {
+            if ($profile->logo) {
+                Storage::disk('public')->delete($profile->logo);
+            }
+
+            $data['logo'] =  $request->file('logo')->store('logo_koperasi', 'public');
+        }
+
+        // 🔥 ini penting: update manual, bukan mass blind
+        foreach ($data as $key => $value) {
+            $profile->$key = $value;
+        }
+
+        $profile->save();
 
         return response()->json([
             'success' => true,
             'message' => 'Profil koperasi berhasil diperbarui',
             'data' => $profile
-        ]);
+        ], 200);
     }
 
     /**

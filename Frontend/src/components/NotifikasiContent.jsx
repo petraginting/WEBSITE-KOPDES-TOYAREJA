@@ -72,8 +72,6 @@ export default function NotifikasiContent() {
     }
   };
 
-  console.log(formData);
-
 
   const handleTarikNotif = (id) => {
     if (window.confirm("Tarik notifikasi ini dari publik?")) {
@@ -186,7 +184,7 @@ export default function NotifikasiContent() {
           <div className="fixed inset-0 z-[999] flex items-center justify-center backdrop-blur-sm bg-black/40 p-4">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-7 animate-scaleIn">
               <h3 className="text-xl font-bold mb-5">
-                {editMode ? "📝 Edit Notifikasi" : "🚀 Buat Pesan Baru"}
+                {editMode ? "📝 Edit Notifikasi" : "🚀 Buat Pengumuman Baru"}
               </h3>
               <form onSubmit={handleSimpanNotif} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">

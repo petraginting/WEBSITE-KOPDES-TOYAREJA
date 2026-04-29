@@ -8,11 +8,18 @@ import {
 } from "../utilities/produkUtils";
 import { getAllProducts } from "../api/products";
 import api from "../api/axios";
+import { uploadFoto } from "../utilities/uploadFoto";
+
+const baseURL = "http://localhost:8000/storage/";
+
 
 export default function ProdukContent() {
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [produkYangDiedit, setProdukYangDiedit] = useState(null);
+  const [preview, setPreview] = useState(null);
+
 
   // Inisialisasi dengan objek default
   const [formData, setFormData] = useState(getDefaultFormData());
@@ -27,6 +34,7 @@ export default function ProdukContent() {
       const data = await getAllProducts();
 
       setProdukList(data);
+
     } catch (error) {
       console.error(error);
     }
@@ -46,13 +54,25 @@ export default function ProdukContent() {
     e.preventDefault();
 
     try {
+      const formDataFix = uploadFoto(formData, 'gambar')
+
       if (editMode) {
-        await api.put(`/admin/products/${produkYangDiedit.id}`, formData);
+        formDataFix.append("_method", "PUT");
+
+        await api.post(`/admin/products/${produkYangDiedit.id}`, formDataFix,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
       } else {
-        await api.post("/admin/products/add", formData);
+        await api.post("/admin/products/add", formDataFix, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
       }
 
-      await fetchDataProduct(); // 🔥 penting
       resetForm();
     } catch (err) {
       console.error(err);
@@ -75,6 +95,19 @@ export default function ProdukContent() {
     }
   };
 
+  const handleFotoChange = (e) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        gambar: file,
+      }));
+    }
+
+    setPreview(URL.createObjectURL(file));
+  };
+
   const resetForm = () => {
     setFormData(getDefaultFormData());
     setIsModalOpen(false);
@@ -92,6 +125,8 @@ export default function ProdukContent() {
 
     return matchesSearch && matchesCategory;
   });
+
+
 
   return (
     <div className="animate-fadeInUp p-4">
@@ -140,6 +175,7 @@ export default function ProdukContent() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[18px]">
         {filteredProducts.length > 0 ? (
           filteredProducts.map((produk) => (
+
             <ProductCard
               key={produk.id}
               produk={produk}
@@ -170,30 +206,20 @@ export default function ProdukContent() {
 
               <form onSubmit={handleTambahProduk} className="space-y-4">
                 {/* pilih emoji untu sementara */}
-                <div className="grid grid-cols-6 gap-2">
-                  {[
-                    "🛍️",
-                    "🌾",
-                    "🫙",
-                    "🍬",
-                    "🌿",
-                    "🧴",
-                    "🐟",
-                    "🍎",
-                    "🍚",
-                    "🧂",
-                    "🧈",
-                    "🥛",
-                  ].map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, emoji })}
-                      className={`text-2xl p-2 rounded-lg ${formData.emoji === emoji ? "bg-blue-500" : "bg-gray-100"}`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 border border-gray-200 rounded-lg overflow-hidden bg-white flex-shrink-0">
+                    <img
+                      src={preview || baseURL + formData.gambar}
+                      alt="preview"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFotoChange}
+                    className="w-full text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 outline-none cursor-pointer"
+                  />
                 </div>
 
                 <input
@@ -270,9 +296,11 @@ export default function ProdukContent() {
 }
 
 function ProductCard({ produk, onEdit, onDelete }) {
+  console.log(produk);
+
   return (
     <div className="bg-white border border-border rounded-2xl overflow-hidden transition-all hover:-translate-y-[3px] hover:shadow-md flex flex-col">
-      <img src={produk.gambar} alt="" className="w-full h-[240px] flex items-center justify-center object-cover" />
+      <img src={baseURL + produk.gambar} alt="" className="w-full h-[240px] flex items-center justify-center object-cover" />
       <div className="p-4 flex-1">
         <div className="font-bold text-[15px] mb-1 text-dark">
           {produk.nama}
