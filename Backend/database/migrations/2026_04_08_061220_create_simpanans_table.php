@@ -19,7 +19,7 @@ return new class extends Migration
                   ->onDelete('set null');
 
             
-            $table->string('nama_lengkap');
+            $table->string('nama_anggota');
             $table->integer('jumlah_pokok');
             $table->integer('jumlah_wajib');
             $table->integer('jumlah_sukarela');

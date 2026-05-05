@@ -9,6 +9,8 @@ export const AuthProvider = ({ children }) => {
 
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [profile, setprofile] = useState(null)
+
 
     // 🔥 INIT APP (jalan sekali saja)
     useEffect(() => {
@@ -29,6 +31,7 @@ export const AuthProvider = ({ children }) => {
                 const userData = res.data.data;
 
                 setUser(userData);
+                await fetchProfileUser()
 
             } catch (error) {
                 console.error("Token invalid:", error);
@@ -40,7 +43,17 @@ export const AuthProvider = ({ children }) => {
         };
 
         initAuth();
+
     }, []);
+
+    const fetchProfileUser = async () => {
+        try {
+            const res = await api.get('/user');
+            setprofile(res.data.data)
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
     // ✅ LOGIN
     const login = async (username, password) => {
@@ -95,7 +108,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ profile, user, login, logout, loading }}>
             {!loading && children}
         </AuthContext.Provider>
     );

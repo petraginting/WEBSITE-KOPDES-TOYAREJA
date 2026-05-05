@@ -71,7 +71,7 @@ class ProfileKopdesController extends Controller
             'singkatan' => 'nullable|string',
             'email' => 'nullable|email',
             'slogan' => 'nullable|string',
-            'status' => 'nullable|in:aktif, non_aktif',
+            'status' => 'nullable|in:aktif,non-aktif',
             'tanggal_berdiri' => 'nullable|string',
             'no_badan_hukum' => 'nullable|string',
             'ketua_koperasi' => 'nullable|string',
@@ -80,7 +80,7 @@ class ProfileKopdesController extends Controller
             'no_wa' => 'nullable|string',
             'sosmed' => 'nullable|string',
             'deskripsi' => 'nullable|string',
-            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'logo' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $profile = ProfileKopdes::firstOrCreate(['id' => 1]);

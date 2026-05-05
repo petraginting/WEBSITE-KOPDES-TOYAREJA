@@ -11,6 +11,7 @@ export const uploadFoto = (payload, field) => {
                 if (value instanceof File) {
                     formData.append(field, value);
                 }
+                return
             } 
             
             formData.append(key, value);

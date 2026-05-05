@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import { useAnggota } from "../context/AnggotaContext";
+import { formatTanggalIndo } from "../utilities/formatters";
 
 export default function AnggotaContent() {
 
@@ -227,7 +228,7 @@ export default function AnggotaContent() {
                       {member.nomorTelepon}
                     </td>
                     <td className="px-[16px] py-[13px] text-dark">
-                      {member.tanggalBergabung || '-'}
+                      {formatTanggalIndo(member.tanggalBergabung) || '-'}
                     </td>
                     <td className="px-[16px] py-[13px]">
                       <span

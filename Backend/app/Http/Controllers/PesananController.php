@@ -35,7 +35,9 @@ class PesananController extends Controller
 
     public function pesananUser()
     {
-        $data = Pesanan::with('details.product')->where('user_id', Auth::user()->id)->get();
+        $data = Pesanan::with([
+                'details.product', 'user.anggota'
+            ])->where('user_id', Auth::user()->id)->get();
 
         return response()->json([
             'success'=>true,

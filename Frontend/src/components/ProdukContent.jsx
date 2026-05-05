@@ -5,12 +5,11 @@ import {
   produkToFormData,
   getDefaultFormData,
   formatIDR,
+  baseURL,
 } from "../utilities/produkUtils";
 import { getAllProducts } from "../api/products";
 import api from "../api/axios";
 import { uploadFoto } from "../utilities/uploadFoto";
-
-const baseURL = "http://localhost:8000/storage/";
 
 
 export default function ProdukContent() {
@@ -73,6 +72,7 @@ export default function ProdukContent() {
         });
       }
 
+      await fetchDataProduct()
       resetForm();
     } catch (err) {
       console.error(err);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getUserOrders } from "../api/orders";
 import BottomNav from "../components/BottomNav";
+import { formatTanggalIndo } from "../utilities/formatters";
 
 export default function Riwayat() {
   const [orders, setOrders] = useState([]);
@@ -18,39 +19,6 @@ export default function Riwayat() {
         setOrders(data);
       } catch (error) {
         console.error("Gagal mengambil data riwayat:", error);
-        // Dummy fallback
-        setOrders([
-          {
-            id: "ORD-1776826638603",
-            date: "22 Apr 2026, 09.57",
-            total: 35000,
-            method: "Cash on Delivery",
-            status: "Selesai",
-            points: 35000,
-            items: [{ nama: "Telur Ayam Kampung", qty: 1, harga: 35000 }],
-          },
-          {
-            id: "ORD-1776599555983",
-            date: "19 April 2026, 18.52",
-            total: 90000,
-            method: "QRIS",
-            status: "Selesai",
-            points: 1000,
-            items: [
-              { nama: "Beras Premium 5Kg", qty: 1, harga: 75000 },
-              { nama: "Gula Pasir 1Kg", qty: 1, harga: 15000 },
-            ],
-          },
-          {
-            id: "ORD-1776599532112",
-            date: "19 April 2026, 18.52",
-            total: 28000,
-            method: "Cash on Delivery",
-            status: "Diproses",
-            points: 0,
-            items: [{ nama: "Minyak Goreng 2L", qty: 1, harga: 28000 }],
-          },
-        ]);
       } finally {
         setIsLoading(false);
       }
@@ -102,7 +70,7 @@ export default function Riwayat() {
             </div>
           ) : orders.length > 0 ? (
             <div className="flex flex-col gap-4">
-              {orders.map((order, index) => (
+              {orders.sort((a, b) => b.id - a.id).map((order, index) => (
                 <div
                   key={index}
                   onClick={() => setSelectedOrder(order)} // <--- Pemicu Modal
@@ -206,9 +174,15 @@ export default function Riwayat() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
+                  <span className="text-gray-500 text-[13px]">Nama Penerima</span>
+                  <span className="font-bold text-[#1e293b] text-[13px]">
+                    {selectedOrder.user?.anggota?.nama_lengkap}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
                   <span className="text-gray-500 text-[13px]">Tanggal</span>
                   <span className="font-bold text-[#1e293b] text-[13px]">
-                    {selectedOrder.created_at}
+                    {formatTanggalIndo(selectedOrder.created_at)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -217,6 +191,14 @@ export default function Riwayat() {
                   </span>
                   <span className="font-bold text-[#1e293b] text-[13px]">
                     {selectedOrder.metode_pembayaran}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 text-[13px]">
+                    Alamat Pengiriman
+                  </span>
+                  <span className="font-bold text-[#1e293b] text-[13px]">
+                    {selectedOrder.alamat_pengiriman}
                   </span>
                 </div>
               </div>
@@ -249,7 +231,7 @@ export default function Riwayat() {
 
               <hr className="border-gray-200 mb-5" />
 
-              {/* Total & Poin */}
+              {/* Total */}
               <div className="flex justify-between items-center mb-6">
                 <span className="font-bold text-[#1e293b] text-[17px]">
                   Total

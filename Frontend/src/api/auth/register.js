@@ -1,6 +1,6 @@
 import { api } from "../api";
 
-var noHp = ""; // Variabel global untuk menyimpan nomor telepon selama proses OTP
+var noHp = sessionStorage.getItem('no_hp'); // Variabel global untuk menyimpan nomor telepon selama proses OTP
 
 export const registerSendOtp = async ({ nama_lengkap, no_hp, jenis_kelamin, password }) => {
     try {
@@ -12,7 +12,7 @@ export const registerSendOtp = async ({ nama_lengkap, no_hp, jenis_kelamin, pass
         });
 
         if (response.data.success) {
-            noHp = no_hp; // Simpan nomor telepon untuk digunakan saat verifikasi OTP
+            sessionStorage.setItem("no_hp", no_hp)
             return response.data;
 
         } else {
@@ -24,6 +24,7 @@ export const registerSendOtp = async ({ nama_lengkap, no_hp, jenis_kelamin, pass
     }
 }
 
+
 export const registerVerifyOtp = async ({ otp }) => {
     try {
         const response = await api.post('/auth/register/verify-otp', {
@@ -32,6 +33,7 @@ export const registerVerifyOtp = async ({ otp }) => {
         });
 
         if (response.data.success) {
+            sessionStorage.removeItem('no_hp')
             return response.data;
         } else {
             throw new Error(response.data.message);

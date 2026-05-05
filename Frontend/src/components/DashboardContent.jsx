@@ -21,7 +21,7 @@ export default function DashboardContent({ setActiveSection }) {
     {
       icon: "👥",
       value: anggotaList.length,
-      label: "Total Anggota Aktif",
+      label: "Total Anggota",
       change: "↑ +12 anggota bulan ini",
       colorClass: "from-blue-600 to-blue-400",
     },
@@ -212,7 +212,7 @@ export default function DashboardContent({ setActiveSection }) {
               </tr>
             </thead>
             <tbody>
-              {pesananList.map((order) => (
+              {pesananList.slice(0, 5).map((order) => (
                 <tr
                   key={order.id}
                   className="hover:bg-blue-50 border-b border-blue-50"

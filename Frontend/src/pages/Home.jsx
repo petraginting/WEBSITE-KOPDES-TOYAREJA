@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getAllProducts } from "../api/products";
 import BottomNav from "../components/BottomNav";
 import logokopdes from "../assets/favnbg.png";
+import { baseURL } from "../utilities/produkUtils";
 
 export default function Home() {
   const navigate = useNavigate(); // <-- Inisialisasi navigasi
@@ -74,7 +75,7 @@ export default function Home() {
       {/* Container pembatas ukuran mobile */}
       <div className="w-full max-w-[450px] bg-white min-h-screen relative pb-24">
         {/* HEADER */}
-        <div className="sticky top-0 bg-white z-10 border-b border-gray-100 px-5 py-4 flex justify-between items-center">
+        <div className="sticky top-0 bg-white z-20 border-b border-gray-100 px-5 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <img
               src={logokopdes}
@@ -187,7 +188,7 @@ export default function Home() {
                   <div className="w-full aspect-square bg-[#e0f2fe] rounded-[14px] mb-3 overflow-hidden flex items-center justify-center">
                     {product.gambar ? (
                       <img
-                        src={product.gambar}
+                        src={baseURL + product.gambar}
                         alt={product.nama}
                         className="w-full h-full object-cover"
                       />

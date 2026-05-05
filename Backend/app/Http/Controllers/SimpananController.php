@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\Mime\Message;
 
@@ -90,7 +91,7 @@ class SimpananController extends Controller
         return DB::transaction(function () use ($request, $totalSimpanan, $anggota) {
             $simpanan = Simpanan::create([
                 'user_id' => $anggota->user_id,
-                'nama_lengkap' => $anggota->nama_lengkap,
+                'nama_anggota' => $anggota->nama_lengkap,
                 'jumlah_pokok' => $request->jumlah_pokok,
                 'jumlah_wajib' => $request->jumlah_wajib,
                 'jumlah_sukarela' => $request->jumlah_sukarela,

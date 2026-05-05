@@ -36,6 +36,16 @@ class AnggotaController extends Controller
         ], 200);
     }
 
+    public function user() {
+        $data = Anggota::with('user')->where('user_id', Auth::user()->id)->first();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List Anggota',
+            'data' => $data
+        ], 200);
+    } 
+
 
    public function show(Anggota $anggota)
     {

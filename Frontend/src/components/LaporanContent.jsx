@@ -1,23 +1,28 @@
 import { useEffect, useState } from "react";
 import { Data_Transaksi, Data_Simpanan } from "../dataset/data.laporan";
 import { lihatSemuaSimpananAnggota } from "../api/auth/simpanan";
+import { getAllUserOrders } from "../api/orders";
 
 export default function LaporanContent() {
   const [selectedMonth, setSelectedMonth] = useState("03");
   const [selectedYear, setSelectedYear] = useState("2026");
   const [simpananData, setSimpananData] = useState([]);
+  const [transactionsData, setTransactionsData] = useState([]);
 
-
-  const fetchData = async () => {
-    try {
-      const data = await lihatSemuaSimpananAnggota();
-      setSimpananData(data);
-    } catch (err) {
-      alert(err.message);
-    }
-  };
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await lihatSemuaSimpananAnggota();
+        const transaksi = await getAllUserOrders()
+        setSimpananData(data);
+        setTransactionsData(transaksi)
+
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
     fetchData();
   }, []);
 
@@ -31,17 +36,18 @@ export default function LaporanContent() {
   //  LOGIKA FILTER
   const filterByDate = (data) => {
     return data.filter((item) => {
-      const date = new Date(item.tanggal);
+      const date = new Date(item.created_at);
       const itemMonth = (date.getMonth() + 1).toString().padStart(2, "0");
       const itemYear = date.getFullYear().toString();
       return itemMonth === selectedMonth && itemYear === selectedYear;
     });
   };
 
-  const filteredTransaksi = filterByDate(Data_Transaksi);
+
+  const filteredTransaksi = filterByDate(transactionsData);
 
   const filteredSimpanan = simpananData.filter((item) => {
-    if (!item.created_at) return false; // Lewati jika tidak ada tanggal
+    if (!item.created_at) return false;
     const date = new Date(item.created_at);
     const itemMonth = (date.getMonth() + 1).toString().padStart(2, "0");
     const itemYear = date.getFullYear().toString();
@@ -50,23 +56,35 @@ export default function LaporanContent() {
 
   //  FUNGSI EXPORT EXCEL (CSV)
   const exportToCSV = (mappedData, fileName, headers) => {
-    if (mappedData.length === 0) {
+    if (!mappedData || mappedData.length === 0) {
       alert("Tidak ada data untuk dieksport pada periode ini.");
       return;
     }
 
     const csvRows = [
-      headers.join(","), // Header
-      ...mappedData.map((row) => row.join(",")), // Data yang sudah berbentuk Array
+      headers.join(","),
+      ...mappedData.map((row) =>
+        row.map((cell) => `"${cell}"`).join(",")
+      ),
     ];
 
     const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
     const url = URL.createObjectURL(blob);
+
     const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${fileName}_${selectedMonth}_${selectedYear}.csv`);
+    link.href = url;
+    link.download = `${fileName}_${selectedMonth}_${selectedYear}.csv`;
+
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
   };
 
   const handleExportSimpanan = () => {
@@ -77,6 +95,34 @@ export default function LaporanContent() {
       new Date(item.created_at).toLocaleDateString("id-ID"),
     ]);
     exportToCSV(mappedData, "Laporan_Simpanan", headers);
+  };
+
+  const handleExportTransaksi = () => {
+    const headers = [
+      "no. registrasi",
+      "nama_pembeli",
+      "nama_barang",
+      "jumlah_terjual",
+      "harga_barang",
+      "subtotal",
+      "tanggal",
+    ];
+
+    const mappedData = filteredTransaksi.flatMap((trx) => {
+      if (!trx.details || trx.details.length === 0) return [];
+
+      return trx.details.map((item) => [
+        trx.user?.anggota?.no_registrasi || "-",
+        trx.user?.anggota?.nama_lengkap || "Anonim",
+        item.product?.nama_produk || "-",
+        item.jumlah,
+        item.product?.harga,
+        item.subtotal,
+        new Date(trx.created_at).toLocaleDateString("id-ID"),
+      ]);
+    });
+
+    exportToCSV(mappedData, "Laporan_Transaksi", headers);
   };
 
   return (
@@ -105,18 +151,18 @@ export default function LaporanContent() {
             <option value="2025">2025</option>
           </select>
 
-          <button
+          {/* <button
             onClick={() => window.print()}
             className="bg-gradient-to-br from-blue-700 to-blue-500 text-white px-4 py-2 rounded-xl text-[13px] font-semibold hover:shadow-lg transition-all"
           >
             ⬇ Cetak PDF
-          </button>
+          </button> */}
         </div>
       </div>
 
       {/* Ringkasan Laporan */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <ReportCard label="Penjualan" value={formatIDR(filteredTransaksi.reduce((a, b) => a + b.total, 0))} />
+        <ReportCard label="Penjualan" value={formatIDR(filteredTransaksi.reduce((a, b) => a + b.total_harga, 0))} />
         <ReportCard label="Transaksi" value={filteredTransaksi.length} />
         <ReportCard
           label="Simpanan"
@@ -132,16 +178,9 @@ export default function LaporanContent() {
             💳 Laporan Transaksi Penjualan
           </h3>
           <button
-            onClick={() =>
-              exportToCSV(filteredTransaksi, "Laporan_Transaksi", [
-                "ID",
-                "Nama",
-                "Produk",
-                "Qty",
-                "Total",
-                "Tanggal",
-              ])
-            }
+            onClick={() => {
+              handleExportTransaksi();
+            }}
             className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-all print:hidden"
           >
             Excel (CSV)
@@ -151,7 +190,7 @@ export default function LaporanContent() {
           <thead>
             <tr className="bg-blue-50/50 border-b border-border">
               <th className="px-4 py-3 text-left">No. TRX</th>
-              <th className="px-4 py-3 text-left">Anggota</th>
+              <th className="px-4 py-3 text-left">Nama Pembeli</th>
               <th className="px-4 py-3 text-left">Total</th>
               <th className="px-4 py-3 text-left">Tanggal</th>
             </tr>
@@ -163,11 +202,11 @@ export default function LaporanContent() {
                 className="border-b border-gray-100 hover:bg-gray-50"
               >
                 <td className="px-4 py-3 font-bold">{item.id}</td>
-                <td className="px-4 py-3">{item.nama}</td>
+                <td className="px-4 py-3">{item.user?.anggota?.nama_lengkap}</td>
                 <td className="px-4 py-3 font-semibold">
-                  {formatIDR(item.total)}
+                  {formatIDR(item.total_harga)}
                 </td>
-                <td className="px-4 py-3 text-light">{item.tanggal}</td>
+                <td className="px-4 py-3 text-light">{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
               </tr>
             ))}
           </tbody>
@@ -192,7 +231,7 @@ export default function LaporanContent() {
           <thead>
             <tr className="bg-blue-50/50 border-b border-border">
               <th className="px-4 py-3 text-left">ID Anggota</th>
-              <th className="px-4 py-3 text-left">Nama</th>
+              <th className="px-4 py-3 text-left">Nama Anggota</th>
               <th className="px-4 py-3 text-left">Jumlah</th>
               <th className="px-4 py-3 text-left">Tanggal</th>
             </tr>

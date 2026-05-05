@@ -1,7 +1,7 @@
 import { api } from "../api";
 
 
-export const forgotPasswordSendOtp = async ({ no_hp }) => {
+export const forgotPasswordSendOtp = async (no_hp) => {
     try {
         const response = await api.post('/auth/forgot-password/send-otp', {
             no_hp: no_hp,
@@ -18,7 +18,7 @@ export const forgotPasswordSendOtp = async ({ no_hp }) => {
     }
 }
 
-export const forgotPasswordVerifyOtp = async ({ otp }) => {
+export const forgotPasswordVerifyOtp = async (otp) => {
     const noHp = sessionStorage.getItem('forgot_password_no_hp'); // Ambil nomor telepon dari sessionStorage
     try {
         const response = await api.post('/auth/forgot-password/verify-otp', {
@@ -36,7 +36,7 @@ export const forgotPasswordVerifyOtp = async ({ otp }) => {
     }
 }
 
-export const forgotPasswordReset = async ({ new_password }) => {
+export const forgotPasswordReset = async (new_password) => {
     const noHp = sessionStorage.getItem('forgot_password_no_hp'); // Ambil nomor telepon dari sessionStorage
     try {
         const response = await api.post('/auth/forgot-password/reset', {

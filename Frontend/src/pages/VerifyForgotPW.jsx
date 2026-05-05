@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../api/axios";
 import llogin from "../assets/Kopdes.png";
+import { reSendOtp } from "../api/auth/resend-otp";
+import { forgotPasswordVerifyOtp } from "../api/auth/forgot-password";
 
 export default function VerifyForgotPW() {
   const navigate = useNavigate();
@@ -20,21 +21,35 @@ export default function VerifyForgotPW() {
     }
   };
 
+  const handleResendOtp = async (e) => {
+    e.preventDefault();
+
+    const noHp = sessionStorage.getItem('forgot_password_no_hp')
+    if (!noHp) {
+      navigate('/forgot-password')
+    }
+
+    try {
+      const data = await reSendOtp(noHp)
+      if (data.success) {
+        alert('OTP berhasil dikirim kembali ke WA anda.')
+      }
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
   const handleVerify = async (e) => {
     e.preventDefault();
     const otpCode = otp.join("");
-    const noHp = sessionStorage.getItem("no_hp");
 
     if (otpCode.length < 6) return alert("Masukkan 6 digit OTP");
 
     setIsLoading(true);
     try {
-      await api.post("/auth/register/verify-otp", {
-        no_hp: noHp,
-        otp_code: otpCode,
-      });
+      await forgotPasswordVerifyOtp(otpCode)
 
-      navigate("/login");
+      navigate("/forgot-password/reset-password");
     } catch (error) {
       console.error("OTP Salah:", error);
       alert("Kode OTP tidak valid atau kadaluarsa.");
@@ -57,7 +72,7 @@ export default function VerifyForgotPW() {
           VERIFIKASI OTP
         </h1>
         <p className="text-gray-800 text-[15px] text-center mb-8">
-          Masukkan kode OTP <br /> Email
+          Masukkan kode OTP
         </p>
 
         <div className="w-full bg-white rounded-[28px] shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-200 p-6 sm:p-8">
@@ -96,15 +111,16 @@ export default function VerifyForgotPW() {
               Kembali ke Login
             </Link>
 
-            <div className="text-center mb-4">
-              <button
-                type="button"
-                className="text-black font-bold text-[15px] hover:underline"
-              >
-                Kirim Ulang OTP
-              </button>
-            </div>
           </form>
+          <div className="text-center mb-4">
+            <button
+              type="button"
+              className="text-black font-bold text-[15px] hover:underline cursor-pointer"
+              onClick={handleResendOtp}
+            >
+              Kirim Ulang OTP
+            </button>
+          </div>
         </div>
       </div>
     </div>

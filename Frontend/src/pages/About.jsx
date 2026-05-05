@@ -1,8 +1,14 @@
 import { useState, useEffect } from "react";
 // import { api } from "../api/axios";
 import BottomNav from "../components/BottomNav";
+import { useSimpanan } from "../context/SimpananContext";
 
 export default function About() {
+  const { totalPokok, totalWajib, totalSukarela } = useSimpanan();
+
+  const totalSimpanan = totalPokok + totalWajib + totalSukarela
+
+
   const [aboutInfo, setAboutInfo] = useState({
     title: "",
     subtitle: "",
@@ -11,7 +17,6 @@ export default function About() {
   });
 
   // State baru untuk menampung nominal total simpanan
-  const [totalSimpanan, setTotalSimpanan] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fungsi memanggil API Backend (Laravel)
@@ -37,7 +42,6 @@ export default function About() {
           });
 
           // Simulasi total simpanan anggota (misal: Rp 125.500.000)
-          setTotalSimpanan(125500000);
           setIsLoading(false);
         }, 500); // Simulasi loading 0.5 detik
       } catch (error) {

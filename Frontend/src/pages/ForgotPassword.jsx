@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../api/api";
 import llogin from "../assets/Kopdes.png";
+import { forgotPasswordSendOtp } from "../api/auth/forgot-password";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -19,9 +19,9 @@ export default function ForgotPassword() {
 
     setIsLoading(true);
     try {
-      await api.post("/forgot-password", { phone_number: phone });
+      await forgotPasswordSendOtp(phone);
       alert("OTP telah dikirim!");
-      navigate("/forgot-password/verify");
+      navigate("/forgot-password/verify-forgot-password");
     } catch (error) {
       console.error("Gagal mengirim OTP:", error);
       alert("Gagal mengirim OTP. Pastikan nomor terdaftar.");

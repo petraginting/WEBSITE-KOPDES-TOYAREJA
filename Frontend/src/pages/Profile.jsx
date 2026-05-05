@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import BottomNav from "../components/BottomNav";
 import {
   User,
@@ -11,47 +10,36 @@ import {
   X,
   LogOut,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { getUserOrders } from "../api/orders";
+import PreviewFoto from "../components/profile/PreviewFoto";
 
 export default function Profile() {
-  const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { profile, loading } = useAuth()
+
+  const { logout } = useAuth();
+  const foto = localStorage.getItem('userAvatar')
+
 
   const [isEditing, setIsEditing] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [formData, setFormData] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
+  const [orders, setOrders] = useState([]);
+
+
 
   useEffect(() => {
-    const fetchProfileData = async () => {
+    const fetchOrders = async () => {
       try {
-        setIsLoading(true);
-
-        setTimeout(() => {
-          const savedAvatar = localStorage.getItem("userAvatar");
-          const dummyData = {
-            nama_lengkap: "Andi Pratama",
-            jenis_kelamin: "Laki-Laki",
-            email: "andi.pratama@email.com",
-            no_hp: "+62 812-3456-7890",
-            alamat: "Jl. Raya Toyareja No. 45, Cilacap, Jawa Tengah",
-            member_sejak: "April 2026",
-            total_transaksi: 0,
-            poin_rewards: 0,
-            foto_profil: savedAvatar ? savedAvatar : null,
-          };
-
-          setProfile(dummyData);
-          setFormData(dummyData);
-          setIsLoading(false);
-        }, 600);
+        const data = await getUserOrders();
+        setOrders(data);
       } catch (error) {
-        console.error("Gagal mengambil data profil:", error);
-        setIsLoading(false);
+        console.error("Gagal mengambil data riwayat:", error);
       }
     };
 
-    fetchProfileData();
+    fetchOrders();
   }, []);
 
   const handleChange = (e) => {
@@ -72,7 +60,6 @@ export default function Profile() {
 
   const handleSave = async () => {
     try {
-      setProfile(formData);
       setIsEditing(false);
 
       if (formData.foto_profil) {
@@ -83,7 +70,6 @@ export default function Profile() {
       alert("Profil berhasil diperbarui!");
     } catch (error) {
       console.error("Gagal memperbarui profil:", error);
-      setProfile(formData);
       setIsEditing(false);
       alert("Terjadi kesalahan saat menyimpan profil.");
     }
@@ -100,7 +86,7 @@ export default function Profile() {
           <button
             onClick={() => {
               if (window.confirm("Yakin ingin keluar dari akun?")) {
-                navigate("/login");
+                logout();
               }
             }}
             className="text-gray-800 hover:text-red-600 transition-colors"
@@ -111,7 +97,7 @@ export default function Profile() {
         </div>
 
         <div className="px-5 mt-5">
-          {isLoading ? (
+          {loading ? (
             <div className="animate-pulse flex flex-col gap-5">
               <div className="h-48 bg-gray-200 rounded-[20px] w-full"></div>
               <div className="h-64 bg-gray-200 rounded-[20px] w-full"></div>
@@ -122,13 +108,13 @@ export default function Profile() {
               <div className="bg-[#2563eb] rounded-[20px] p-6 flex flex-col items-center text-center shadow-[0_8px_20px_rgba(37,99,235,0.2)] mb-6">
                 <div
                   onClick={() => {
-                    if (profile.foto_profil) setIsPreviewOpen(true);
+                    if (foto) setIsPreviewOpen(true);
                   }}
                   className="w-[84px] h-[84px] bg-white rounded-full flex items-center justify-center mb-4 shadow-inner overflow-hidden border-2 border-white cursor-pointer hover:opacity-90 transition-opacity"
                 >
-                  {profile.foto_profil ? (
+                  {foto ? (
                     <img
-                      src={profile.foto_profil}
+                      src={foto}
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />
@@ -150,7 +136,7 @@ export default function Profile() {
                   <button
                     onClick={() => {
                       setFormData(profile);
-                      setImagePreview(profile.foto_profil);
+                      setImagePreview(foto);
                       setIsEditing(true);
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-[#2563eb] bg-blue-50 hover:bg-blue-100"
@@ -193,20 +179,6 @@ export default function Profile() {
 
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-[#eff6ff] rounded-full flex items-center justify-center text-[#2563eb] shrink-0">
-                      <Mail className="w-5 h-5" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-gray-400 text-[12px] font-medium mb-0.5">
-                        Email
-                      </span>
-                      <span className="text-gray-900 font-bold text-[14px]">
-                        {profile.email}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-[#eff6ff] rounded-full flex items-center justify-center text-[#2563eb] shrink-0">
                       <Phone className="w-5 h-5" />
                     </div>
                     <div className="flex flex-col">
@@ -214,7 +186,7 @@ export default function Profile() {
                         Nomor Telepon
                       </span>
                       <span className="text-gray-900 font-bold text-[14px]">
-                        {profile.no_hp}
+                        {profile.user?.no_hp}
                       </span>
                     </div>
                   </div>
@@ -243,7 +215,7 @@ export default function Profile() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-[#f0f5ff] rounded-[16px] p-4 flex flex-col items-center justify-center border border-blue-50">
                     <span className="text-[#2563eb] font-bold text-[28px] leading-none mb-1">
-                      {profile.total_transaksi}
+                      {orders.length}
                     </span>
                     <span className="text-gray-500 text-[12px] font-medium">
                       Total Transaksi
@@ -252,7 +224,7 @@ export default function Profile() {
 
                   <div className="bg-[#fffcf0] rounded-[16px] p-4 flex flex-col items-center justify-center border border-yellow-50">
                     <span className="text-[#d97706] font-bold text-[28px] leading-none mb-1">
-                      {profile.poin_rewards}
+                      {profile.poin}
                     </span>
                     <span className="text-gray-500 text-[12px] font-medium">
                       Poin Rewards
@@ -396,28 +368,11 @@ export default function Profile() {
         )}
 
         {/* MODAL PREVIEW FOTO BESAR */}
-        {isPreviewOpen && profile?.foto_profil && (
-          <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 transition-opacity"
-            onClick={() => setIsPreviewOpen(false)}
-          >
-            <div
-              className="relative max-w-sm w-full flex flex-col items-center transition-transform transform scale-100"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setIsPreviewOpen(false)}
-                className="absolute -top-12 right-0 text-white/70 hover:text-white p-2 transition-colors"
-              >
-                <X className="w-8 h-8" />
-              </button>
-              <img
-                src={profile.foto_profil}
-                alt="Preview Full"
-                className="w-full h-auto max-h-[70vh] rounded-2xl shadow-2xl object-cover"
-              />
-            </div>
-          </div>
+        {isPreviewOpen && foto && (
+          <PreviewFoto
+            foto={foto}
+            setIsPreviewOpen={setIsPreviewOpen}
+          />
         )}
       </div>
     </div>

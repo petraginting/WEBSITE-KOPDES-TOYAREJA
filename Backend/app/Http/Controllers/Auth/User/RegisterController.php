@@ -53,7 +53,7 @@ class RegisterController extends Controller
         // Logika untuk mengirim OTP ke database
         OtpCode::updateOrCreate(
             ['no_hp' => $no_hp],
-            ['otp_code' => $otp, 'valid_until' => now()->addMinutes(5)]
+            ['otp_code' => $otp, 'valid_until' => now()->addMinutes(2)]
         );
 
         // Kirim OTP via API Fonnte ke WhatsApp
@@ -61,7 +61,7 @@ class RegisterController extends Controller
             'Authorization' => env('FONNTE_TOKEN'),
         ])->post('https://api.fonnte.com/send', [ 
             'target'  => $no_hp,
-            'message' => "Kode OTP Koperasi Anda: $otp. Rahasiakan kode ini. Berlaku 5 menit.",
+            'message' => "Kode OTP Koperasi Anda: $otp. Rahasiakan kode ini. Berlaku 2 menit.",
         ]);
 
     

@@ -1,46 +1,8 @@
-import { useState, useEffect } from "react";
-import { api } from "../api/axios";
 import BottomNav from "../components/BottomNav";
+import { useAuth } from "../context/AuthContext";
 
 export default function Simpanan() {
-  const [isLoading, setIsLoading] = useState(true);
-
-  // State untuk menyimpan status keanggotaan dan jumlah saldo
-  const [isMember, setIsMember] = useState(false);
-  const [saldo, setSaldo] = useState(0);
-
-  // Fungsi memanggil API Backend (Laravel)
-  useEffect(() => {
-    const fetchSimpananData = async () => {
-      try {
-        setIsLoading(true);
-        // UNTUK NANTI: Endpoint untuk mengambil data profil/simpanan user saat ini
-        // const response = await api.get('/user/simpanan');
-        // setIsMember(response.data.is_member);
-        // setSaldo(response.data.saldo_simpanan);
-
-        // --- DATA DUMMY SEMENTARA ---
-        setTimeout(() => {
-          // UBAH NILAI INI MENJADI false UNTUK MELIHAT TAMPILAN BUKAN ANGGOTA
-          const statusAnggotaDummy = true;
-
-          setIsMember(statusAnggotaDummy);
-
-          // Jika dia anggota, set saldonya
-          if (statusAnggotaDummy) {
-            setSaldo(375000);
-          }
-
-          setIsLoading(false);
-        }, 500); // Simulasi loading
-      } catch (error) {
-        console.error("Gagal mengambil data simpanan:", error);
-        setIsLoading(false);
-      }
-    };
-
-    fetchSimpananData();
-  }, []);
+  const { profile, loading } = useAuth()
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center">
@@ -55,12 +17,12 @@ export default function Simpanan() {
 
         {/* AREA KONTEN UTAMA */}
         <div className="flex-1 flex flex-col relative">
-          {isLoading ? (
+          {loading ? (
             <div className="p-5">
               {/* Skeleton Loading untuk Card */}
               <div className="h-32 bg-gray-200 animate-pulse rounded-[16px] w-full"></div>
             </div>
-          ) : isMember ? (
+          ) : profile.user?.role === 'anggota' ? (
             /* TAMPILAN JIKA USER ADALAH ANGGOTA (KARTU BIRU) */
             <div className="p-5">
               <div className="bg-[#2563eb] rounded-[16px] p-6 shadow-[0_8px_20px_rgba(37,99,235,0.3)]">
@@ -86,7 +48,7 @@ export default function Simpanan() {
                     style: "currency",
                     currency: "IDR",
                     maximumFractionDigits: 0,
-                  }).format(saldo)}
+                  }).format(profile.total_simpanan)}
                 </h2>
               </div>
             </div>

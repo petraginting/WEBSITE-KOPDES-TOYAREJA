@@ -52,7 +52,7 @@ class OtpController extends Controller
         // Logika untuk mengirim OTP ke database
         OtpCode::updateOrCreate(
             ['no_hp' => $no_hp],
-            ['otp_code' => $otp_code, 'valid_until' => now()->addMinutes(5)]
+            ['otp_code' => $otp_code, 'valid_until' => now()->addMinutes(2)]
         );
 
         // Kirim OTP via API Fonnte ke WhatsApp
@@ -60,7 +60,7 @@ class OtpController extends Controller
             'Authorization' => env('FONNTE_TOKEN'),
         ])->post('https://api.fonnte.com/send', [ 
             'target'  => $no_hp,
-            'message' => "Kode OTP Koperasi Anda: $otp_code. Rahasiakan kode ini. Berlaku 5 menit.",
+            'message' => "Kode OTP Koperasi Anda: $otp_code. Rahasiakan kode ini. Berlaku 2 menit.",
         ]);
 
         if ($response->successful()) {
@@ -125,5 +125,52 @@ class OtpController extends Controller
             'success' => true,  
             'message' => 'Password berhasil diperbarui.'
         ], 200);
+    }
+
+
+    public function resendOtp(Request $request)
+    {
+        $request->validate([
+            'no_hp' => 'required'
+        ]);
+
+        $no_hp = $this->formatNomorHp($request->no_hp);
+
+        // Cek apakah nomor HP sudah terdaftar
+        if (!User::where('no_hp', $request->no_hp)->exists()) {
+            return response()->json(['message' => 'Nomor HP tidak terdaftar.'], 404);
+        }
+
+        // Hapus OTP lama yang masih valid untuk nomor HP ini
+        OtpCode::where('no_hp', $no_hp)->delete();
+
+        // Generate kode OTP baru
+        $otp_code = rand(100000, 999999);
+
+        // Logika untuk mengirim OTP ke database
+        OtpCode::updateOrCreate(
+            ['no_hp' => $no_hp],
+            ['otp_code' => $otp_code, 'valid_until' => now()->addMinutes(2)]
+        );
+
+        // Kirim OTP via API Fonnte ke WhatsApp
+        $response = Http::withoutVerifying()->withHeaders([
+            'Authorization' => env('FONNTE_TOKEN'),
+        ])->post('https://api.fonnte.com/send', [ 
+            'target'  => $no_hp,
+            'message' => "Kode OTP Koperasi Anda: $otp_code. Rahasiakan kode ini. Berlaku 2 menit.",
+        ]);
+
+        if ($response->successful()) {
+            return response()->json([
+                'success' => true,  
+                'message' => 'OTP berhasil dikirim ke WhatsApp Anda.'
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false, 
+            'message' => 'Gagal mengirim OTP. Silakan coba lagi.'
+        ], 500);
     }
 }

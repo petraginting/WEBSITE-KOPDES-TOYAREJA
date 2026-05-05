@@ -22,13 +22,13 @@ export const formatRupiah = (angka) => {
  * @returns {string} Format: "25 April 2026, 10:30"
  */
 export const formatTanggalIndo = (tanggal) => {
+  if (tanggal === null) return
+  
   const date = new Date(tanggal);
   const options = {
     year: "numeric",
     month: "long",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
     timeZone: "Asia/Jakarta",
   };
   return date.toLocaleString("id-ID", options);
@@ -140,7 +140,7 @@ export const validateLoginForm = (username, password) => {
     errors.push("Password harus diisi");
   }
   if (password && password.length < 6) {
-    errors.push("Password minimal 6 karakter");
+    errors.push("Password minimal 8 karakter");
   }
   return {
     isValid: errors.length === 0,

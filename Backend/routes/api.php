@@ -78,16 +78,20 @@ Route::put('/simpanan/{simpanan}', [SimpananController::class, 'update'])->middl
 Route::get('/simpanan', [SimpananController::class, 'index'])->middleware('auth:sanctum');
 
 
+// user
+Route::get('/user', [AnggotaController::class, 'user'])->middleware('auth:sanctum');
 
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [LoginController::class, 'login']);
     Route::post('/register/send-otp', [RegisterController::class, 'sendOtpRegister']);
     Route::post('/register/verify-otp', [RegisterController::class, 'register']);
+    
+    Route::post('/resend-otp', [AuthOtpController::class, 'resendOtp']);
 
-    Route::post('forgot-password/reset', [AuthOtpController::class, 'updatePassword']);
-    Route::post('forgot-password/send-otp', [AuthOtpController::class, 'sendOtpForgotPassword']);
-    Route::post('forgot-password/verify-otp', [AuthOtpController::class, 'verifyOtpForgotPassword']);
+    Route::post('/forgot-password/reset', [AuthOtpController::class, 'updatePassword']);
+    Route::post('/forgot-password/send-otp', [AuthOtpController::class, 'sendOtpForgotPassword']);
+    Route::post('/forgot-password/verify-otp', [AuthOtpController::class, 'verifyOtpForgotPassword']);
 
     // Protected routes (memerlukan token)
     Route::middleware('auth:sanctum')->group(function () {

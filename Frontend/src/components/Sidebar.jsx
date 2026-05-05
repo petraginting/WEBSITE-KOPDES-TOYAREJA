@@ -1,3 +1,5 @@
+import { useAuth } from "../context/AuthContext";
+
 export default function Sidebar({
   isOpen,
   setIsOpen,
@@ -5,6 +7,9 @@ export default function Sidebar({
   setActiveSection,
   onLogout,
 }) {
+
+  const { logout } = useAuth()
+
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "📊", section: "Menu Utama" },
     {
@@ -34,15 +39,13 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`h-screen bg-[#fafafa] flex flex-col fixed top-0 left-0 z-[100] shadow-[0_4px_12px_rgba(37,99,235,0.35)] transition-all duration-300 ease-in-out ${
-        isOpen ? "w-[270px]" : "w-[70px]"
-      }`}
+      className={`h-screen bg-[#fafafa] flex flex-col fixed top-0 left-0 z-[100] shadow-[0_4px_12px_rgba(37,99,235,0.35)] transition-all duration-300 ease-in-out ${isOpen ? "w-[270px]" : "w-[70px]"
+        }`}
     >
       {/* HEADER SIDEBAR (Hamburger & Logo) */}
       <div
-        className={`h-16 flex items-center border-b border-black/10 flex-shrink-0 transition-all duration-300 ${
-          isOpen ? "px-3 gap-1" : "px-0 justify-center"
-        }`}
+        className={`h-16 flex items-center border-b border-black/10 flex-shrink-0 transition-all duration-300 ${isOpen ? "px-3 gap-1" : "px-0 justify-center"
+          }`}
       >
         {/* Logo Koperasi*/}
         {isOpen && (
@@ -106,10 +109,9 @@ export default function Sidebar({
               title={!isOpen ? item.label : ""} // Munculkan tooltip teks saat dihover pada mode mini
               className={`flex items-center p-2.5 rounded-xl text-[13.5px] font-medium cursor-pointer transition-all mb-1 select-none overflow-hidden
                 ${isOpen ? "gap-2.5" : "justify-center"}
-                ${
-                  activeSection === item.id
-                    ? "bg-gradient-to-br from-blue-500 to-blue-400 text-black shadow-[0_4px_12px_rgba(37,99,235,0.35)]"
-                    : "text-black/60 hover:bg-black/5 hover:text-black"
+                ${activeSection === item.id
+                  ? "bg-gradient-to-br from-blue-500 to-blue-400 text-black shadow-[0_4px_12px_rgba(37,99,235,0.35)]"
+                  : "text-black/60 hover:bg-black/5 hover:text-black"
                 }`}
             >
               <span className="text-base text-center flex-shrink-0 w-5">
@@ -138,7 +140,7 @@ export default function Sidebar({
           // Mode Terbuka: Tampilkan info lengkap & tombol logout
           <>
             <button
-              onClick={onLogout}
+              onClick={() => logout()}
               className="w-full bg-white hover:bg-red-50 border border-black/20 rounded-xl text-black/80 text-[13px] p-2.5 flex items-center justify-center gap-1.5 hover:text-red-600 hover:border-red-200 transition-all shadow-sm whitespace-nowrap"
             >
               ↩ Keluar
@@ -147,7 +149,7 @@ export default function Sidebar({
         ) : (
           // Mode Tertutup: Tampilkan hanya ikon keluar
           <button
-            onClick={onLogout}
+            onClick={() => logout()}
             title="Keluar"
             className="w-full flex items-center justify-center p-3 rounded-xl transition-all bg-white hover:bg-red-50 border border-black/20 text-black/80 hover:text-red-600 hover:border-red-200 shadow-sm"
           >

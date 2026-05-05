@@ -59,7 +59,7 @@ export default function Login() {
           />
         </div>
 
-        <h1 className="text-[32px] font-black mb-1">SELAMAT DATANG</h1>
+        <h1 className="text-[27px] text-center font-black mb-1">SELAMAT DATANG</h1>
         <p className="text-gray-800 text-[17px] mb-8">
           Masuk ke akun anda
         </p>

@@ -2,7 +2,7 @@ import pandas as pd
 from prophet import Prophet
 
 # PARAMETER
-MIN_DATA = 10
+MIN_DATA = 20
 MAX_HORIZON = 30
 
 def preprocess(df):

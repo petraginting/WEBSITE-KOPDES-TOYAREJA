@@ -11,6 +11,16 @@ export const getUserOrders = async () => {
   }
 };
 
+export const getAllUserOrders = async () => {
+  try {
+    const response = await api.get("/admin/pesanan");
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Gagal ambil riwayat pesanan:", error);
+    throw error;
+  }
+};
+
 // GET: Ambil detail pesanan
 export const getOrderDetail = async (orderId) => {
   try {
@@ -25,7 +35,11 @@ export const getOrderDetail = async (orderId) => {
 // POST: Checkout (buat pesanan baru)
 export const checkout = async (checkoutData) => {
   try {
-    const response = await api.post("/pesanan/checkout", checkoutData);
+    const response = await api.post("/pesanan/checkout", checkoutData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
     return response.data.data;
   } catch (error) {
     console.error("Gagal checkout:", error);

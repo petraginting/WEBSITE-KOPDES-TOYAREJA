@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../api/axios";
 import InputField from "../components/InputField";
 import llogin from "../assets/Kopdes.png";
+import { forgotPasswordReset } from "../api/auth/forgot-password";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export default function ResetPassword() {
 
     setIsLoading(true);
     try {
-      await api.post("/reset-password", formData);
+      await forgotPasswordReset(formData.password);
       alert("Password berhasil diubah! Silakan login.");
       navigate("/");
     } catch (error) {

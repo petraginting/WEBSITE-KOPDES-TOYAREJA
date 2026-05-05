@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 // Pastikan path import API ini sesuai dengan folder Anda (seperti di VerifyRegist sebelumnya)
 import { api } from "../api/api";
-import { createPortal } from "react-dom";
+import { getAllUserOrders } from "../api/orders";
+import { formatIDR } from "../utilities/produkUtils";
+import ModalDetail from "./admin/pesanan/ModalDetail";
 
 export default function PesananContent() {
   // 1. STATE UNTUK API & MODAL
@@ -15,8 +17,8 @@ export default function PesananContent() {
   const fetchDataPesanan = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get("/admin/pesanan");
-      setPesananList(response.data.data);
+      const data = await getAllUserOrders();
+      setPesananList(data);
     } catch (error) {
       console.error("Gagal mengambil data:", error);
       alert("Gagal memuat data pesanan dari server.");
@@ -164,6 +166,9 @@ export default function PesananContent() {
                   Total
                 </th>
                 <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
+                  Metode Pembayaran
+                </th>
+                <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-left">
                   Status
                 </th>
                 <th className="bg-blue-50 text-mid font-semibold text-xs px-4 py-3 text-center">
@@ -202,9 +207,10 @@ export default function PesananContent() {
 
       {/* 5. TAMPILKAN MODAL JIKA ADA PESANAN YANG DIPILIH */}
       {selectedPesanan && (
-        <DetailModal
+        <ModalDetail
           data={selectedPesanan}
           onClose={() => setSelectedPesanan(null)}
+          statusStyles={statusStyles}
         />
       )}
     </div>
@@ -236,13 +242,6 @@ function StatCardPesanan({ icon, value, label, colorClass }) {
 // Tambahkan prop onDetailClick di sini
 function TableRow({ data, onUpdateStatus, onDelete, onDetailClick }) {
 
-  const formatIDR = (val) =>
-    new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(val);
-
   return (
     <tr className="hover:bg-blue-50/50 border-b border-border last:border-none transition-colors">
       <td className="px-4 py-3 text-dark font-bold">{data.id}</td>
@@ -251,6 +250,7 @@ function TableRow({ data, onUpdateStatus, onDelete, onDetailClick }) {
       <td className="px-4 py-3 text-dark font-medium">
         {formatIDR(data.total_harga)}
       </td>
+      <td className="px-4 py-3 text-dark">{data.metode_pembayaran}</td>
       <td className="px-4 py-3">
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusStyles[data.status_pesanan]}`}
@@ -288,150 +288,5 @@ function TableRow({ data, onUpdateStatus, onDelete, onDetailClick }) {
         </button>
       </td>
     </tr>
-  );
-}
-
-// 6. KOMPONEN BARU: MODAL DETAIL
-function DetailModal({ data, onClose }) {
-  // State untuk menyimpan daftar item dari tabel detail_pesanan
-  const [detailItems, setDetailItems] = useState([]);
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-
-  const formatIDR = (val) =>
-    new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(val);
-
-  // Fetch data detail pesanan saat modal dibuka
-  useEffect(() => {
-    const fetchDetailPesanan = async () => {
-      setIsLoadingDetails(true);
-      try {
-        // Sesuaikan endpoint ini dengan route 'show' di web.php / api.php Laravel Anda
-        // Contoh: Route::get('/detail-pesanan/{pesanan_id}', [DetailPesananController::class, 'show']);
-        const response = await api.get(`/pesanan/${data.id}`);
-
-        // Mengambil array dari response JSON Laravel: 'data' => $details
-        setDetailItems(response.data.data);
-      } catch (error) {
-        console.error("Gagal mengambil detail pesanan:", error);
-      } finally {
-        setIsLoadingDetails(false);
-      }
-    };
-
-    if (data && data.id) {
-      fetchDetailPesanan();
-    }
-  }, [data]);
-
-  return (
-    createPortal(
-      <div className="fixed inset-0 z-[999] flex justify-center items-start overflow-y-auto pt-10 pb-10 backdrop-blur-md bg-black/40">
-        <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl animate-fadeInUp p-6 max-h-[90vh] flex flex-col">
-          {/* HEADER MODAL */}
-          <div className="flex justify-between items-center border-b pb-4 mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-dark">Detail Pesanan</h2>
-              <p className="text-sm text-gray-500">#{data.orderId || data.id}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:bg-red-50 hover:text-red-500 w-8 h-8 rounded-full flex items-center justify-center text-2xl transition-all"
-            >
-              ×
-            </button>
-          </div>
-
-          {/* INFO PELANGGAN */}
-          <div className="grid grid-cols-2 gap-4 mb-6 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
-            <div>
-              <p className="text-gray-500 mb-1">Nama Anggota</p>
-              <p className="font-semibold text-dark">{data.user?.anggota?.nama_lengkap}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 mb-1">Status Pesanan</p>
-              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${statusStyles[data.status_pesanan]}`}>
-                {data.status_pesanan}
-              </span>
-            </div>
-          </div>
-
-          {/* TABEL ITEM PRODUK (Dari DetailPesananController) */}
-          <div className="flex-1 overflow-y-auto border border-gray-200 rounded-xl">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead className="bg-gray-50 sticky top-0 shadow-sm">
-                <tr>
-                  <th className="py-3 px-4 font-semibold text-gray-600 border-b">
-                    Produk
-                  </th>
-                  <th className="py-3 px-4 font-semibold text-gray-600 border-b text-center">
-                    Harga Satuan
-                  </th>
-                  <th className="py-3 px-4 font-semibold text-gray-600 border-b text-center">
-                    Jumlah
-                  </th>
-                  <th className="py-3 px-4 font-semibold text-gray-600 border-b text-right">
-                    Subtotal
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoadingDetails ? (
-                  <tr>
-                    <td colSpan="4" className="py-8 text-center text-gray-500">
-                      <span className="animate-pulse">
-                        Memuat daftar produk...
-                      </span>
-                    </td>
-                  </tr>
-                ) : detailItems.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" className="py-8 text-center text-gray-500">
-                      Tidak ada produk dalam pesanan ini.
-                    </td>
-                  </tr>
-                ) : (
-                  detailItems.details?.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="border-b last:border-0 hover:bg-gray-50"
-                    >
-                      {/* Sesuaikan item.product.nama dengan nama kolom di tabel Product Anda */}
-                      <td className="py-3 px-4 font-medium text-dark">
-                        {item.product?.nama_produk ||
-                          item.name ||
-                          "Produk Tidak Diketahui"}
-                      </td>
-                      {/* Asumsi harga didapat dari harga produk dibagi jumlah atau langsung dari relasi */}
-                      <td className="py-3 px-4 text-center text-gray-600">
-                        {formatIDR(item.harga_satuan)}
-                      </td>
-                      <td className="py-3 px-4 text-center font-medium">
-                        {item.jumlah}
-                      </td>
-                      <td className="py-3 px-4 text-right font-semibold text-blue-600">
-                        {formatIDR(item.subtotal)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* FOOTER TOTAL */}
-          <div className="mt-6 flex justify-between items-center border-t pt-4">
-            <span className="text-gray-500 font-medium">Total Keseluruhan</span>
-            <span className="text-2xl font-bold text-dark">
-              {formatIDR(data.total_harga || data.total)}
-            </span>
-          </div>
-        </div>
-      </div>,
-      document.body,
-    )
   );
 }

@@ -37,3 +37,6 @@ export const getDefaultFormData = () => {
     gambar: null,
   };
 };
+
+export const baseURL = "http://localhost:8000/storage/";
+

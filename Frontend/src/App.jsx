@@ -52,6 +52,26 @@ const AdminRoute = ({ children }) => {
   return children;
 };
 
+const ForgotPasswordRoute = ({ children }) => {
+  const noHp = sessionStorage.getItem('forgot_password_no_hp')
+
+  if (!noHp) {
+    return <Navigate to='/forgot-password' replace />
+  }
+
+  return children
+}
+
+const ForgotRouteProtect = ({ children }) => {
+  const token = localStorage.getItem('token')
+
+  if (token) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children
+}
+
 export default function App() {
   return (
     <Routes>
@@ -61,9 +81,21 @@ export default function App() {
       <Route path="verify" element={<VerifyRegist />} />
       {/* Lupa Password */}
       <Route path="/forgot-password">
-        <Route index element={<ForgotPassword />} />
-        <Route path="verify-forgot-password" element={<VerifyFPW />} />
-        <Route path="reset-password" element={<ResetPassword />} />
+        <Route index element={
+          <ForgotRouteProtect>
+            <ForgotPassword />
+          </ForgotRouteProtect>
+        } />
+        <Route path="verify-forgot-password" element={
+          <ForgotPasswordRoute>
+            <VerifyFPW />
+          </ForgotPasswordRoute>
+        } />
+        <Route path="reset-password" element={
+          <ForgotPasswordRoute>
+            <ResetPassword />
+          </ForgotPasswordRoute>
+        } />
       </Route>
 
       {/* Menu admin */}

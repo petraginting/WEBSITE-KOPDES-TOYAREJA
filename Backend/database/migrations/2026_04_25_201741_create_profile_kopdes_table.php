@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nama_koperasi');
             $table->string('singkatan')->nullable();
             $table->text('slogan')->nullable();
-            $table->enum('status', ['aktif', 'non_aktif'])->default('aktif');
+            $table->enum('status', ['aktif', 'non-aktif'])->default('aktif');
             $table->string('tanggal_berdiri')->nullable();
             $table->string('no_badan_hukum')->nullable();
             $table->string('ketua_koperasi')->nullable();

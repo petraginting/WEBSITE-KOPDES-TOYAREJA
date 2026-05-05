@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getProductById } from "../api/products";
 import { addToCart } from "../api/cart";
 import BottomNav from "../components/BottomNav";
+import { baseURL } from "../utilities/produkUtils";
+import { formatRupiah } from "../utilities/formatters";
 
 export default function ProductDetail() {
   const { id } = useParams(); // Mengambil ID dari URL
@@ -30,14 +32,6 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
 
-  // Format Rupiah
-  const formatRupiah = (angka) =>
-    new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(angka);
-
   // Fungsi Tambah/Kurang Qty
   const handleQty = (type) => {
     if (type === "minus" && qty > 1) setQty(qty - 1);
@@ -57,7 +51,6 @@ export default function ProductDetail() {
     try {
       setIsLoading(true);
       await addToCart(product.id, qty);
-      alert("Berhasil ditambahkan ke keranjang!");
       navigate("/keranjang");
     } catch (error) {
       console.error("Gagal tambah ke keranjang:", error);
@@ -111,7 +104,7 @@ export default function ProductDetail() {
           <div className="w-full aspect-[4/3] bg-[#eef2ff] rounded-[24px] mb-6 flex items-center justify-center overflow-hidden">
             {product.gambar ? (
               <img
-                src={product.gambar}
+                src={baseURL + product.gambar}
                 alt={product.nama}
                 className="w-full h-full object-cover rounded-[24px]"
               />

@@ -6,7 +6,7 @@ import { formatInputRupiah, formatRupiah } from "../utilities/simpanan";
 
 
 export default function SimpananContent() {
-  const { simpananData, fetchUpdateSimpanan } = useSimpanan();
+  const { simpananData, fetchUpdateSimpanan, fetchSimpanan } = useSimpanan();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [id, setId] = useState("")
@@ -14,7 +14,6 @@ export default function SimpananContent() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     no_registrasi: "",
-    nama_lengkap: "",
     jumlah_pokok: 0,
     jumlah_wajib: 0,
     jumlah_sukarela: 0,
@@ -31,7 +30,7 @@ export default function SimpananContent() {
         const response = await tambahSimpanan(formData);
         if (response.success) {
           alert("Simpanan Berhasil!");
-          // fetchData(); // Refresh data tabel
+          await fetchSimpanan()
           closeFormModal();
         }
       }

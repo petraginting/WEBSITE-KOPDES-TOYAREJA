@@ -6,7 +6,8 @@ const AnggotaContext = createContext();
 
 export const AnggotaProvider = ({ children }) => {
     const { user } = useAuth()
-
+    const [paymentMethod, setPaymentMethod] = useState(null);
+    
 
     const [anggotaList, setAnggotaList] = useState([]);
     const [selectedAnggota, setSelectedAnggota] = useState(null);
@@ -83,9 +84,15 @@ export const AnggotaProvider = ({ children }) => {
         }
     }, [user]);
 
+    const cek_metode_pembayaran = (metode) => {
+        setPaymentMethod(metode)
+    }
+
     return (
         <AnggotaContext.Provider
             value={{
+                cek_metode_pembayaran,
+                paymentMethod,
                 anggotaList,
                 selectedAnggota,
                 loading,
